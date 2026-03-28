@@ -56,17 +56,18 @@ export function useUpload({ albumId, onComplete }: UseUploadOptions) {
     }
 
     activeUploads.current++;
-    const supabase = createClient();
     
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    const storagePath = `${albumId}/${Date.now()}-${next.name}`;
-
-    // Update status
+    // MUTATE SYNCHRONOUSLY BEFORE ANY AWAIT 
+    // to prevent the for-loop from spawning duplicate threads on the same target file.
+    next.status = "uploading";
     setFiles((prev) =>
       prev.map((f) => (f.id === next.id ? { ...f, status: "uploading" as const } : f))
     );
-    next.status = "uploading";
+
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    const storagePath = `${albumId}/${Date.now()}-${next.name}`;
 
     try {
       // Create and Upload Thumbnail (Fire and Forget or parallel)
