@@ -39,7 +39,7 @@ export default function GalleryPage() {
       {/* Unified Header */}
       <header className="flex items-center justify-center px-5 py-5 sticky top-0 z-30 bg-white/90 backdrop-blur-sm border-b border-bf-gray-200">
         <div 
-          className="w-36 md:w-48 h-6 md:h-8 bg-gradient-rosegold" 
+          className="w-36 md:w-48 h-6 md:h-8 bg-rosegold" 
           style={{ 
             WebkitMaskImage: 'url(/bf-logo-wordmark.svg)', 
             WebkitMaskSize: 'contain', 
@@ -59,6 +59,11 @@ export default function GalleryPage() {
         <h1 className="heading-display-italic text-3xl md:text-5xl mb-3">
           {album ? album.name : "The Gallery"}
         </h1>
+        {album?.event_date && (
+          <p className="font-serif italic text-sm md:text-base text-transparent bg-clip-text bg-[image:var(--bf-rosegold)] mb-5 inline-block">
+            {new Date(album.event_date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+          </p>
+        )}
         {album && (
           <p className="text-editorial text-bf-text-secondary max-w-lg whitespace-pre-line">
             {album.description || `A curated editorial of moments captured during ${album.name}. Elegant celebrations, sun-drenched landscapes, and the ruby sparkle of Brutal Fruit.`}
