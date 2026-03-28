@@ -50,7 +50,7 @@ export default function AlbumsPage() {
       </section>
 
       {/* Album grid */}
-      <main className="flex-1 px-5">
+      <main className="px-5 pb-8">
         {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
