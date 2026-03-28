@@ -19,8 +19,8 @@ export default function supabaseImageLoader({ src, width, quality }: ImageLoader
     return src;
   }
 
-  // Build the transform URL
-  return `${supabaseUrl}/storage/v1/render/image/public/${STORAGE_BUCKET}/${src}?width=${width}&quality=${quality || 80}`;
+  // Build the transform URL (using object/public ensures it works on Free tier)
+  return `${supabaseUrl}/storage/v1/object/public/${STORAGE_BUCKET}/${src}`;
 }
 
 /**
@@ -36,5 +36,5 @@ export function getPublicUrl(storagePath: string): string {
  */
 export function getThumbnailUrl(storagePath: string, width = 400, quality = 80): string {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  return `${supabaseUrl}/storage/v1/render/image/public/${STORAGE_BUCKET}/${storagePath}?width=${width}&quality=${quality}`;
+  return `${supabaseUrl}/storage/v1/object/public/${STORAGE_BUCKET}/${storagePath}`;
 }
