@@ -77,6 +77,13 @@ export default function AdminLayout({
         </nav>
 
         <Link
+          href="/photographer/albums"
+          className="w-full bg-bf-black text-white text-center text-xs py-3 rounded-2xl mb-2 font-bold font-sans hover:bg-bf-black/80 transition-colors uppercase tracking-widest shadow-md"
+        >
+          ACCESS UPLOAD CENTER
+        </Link>
+
+        <Link
           href="/admin/albums"
           className="btn-gradient text-center text-xs py-3 mb-4"
         >

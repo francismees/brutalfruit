@@ -23,18 +23,32 @@ export default function PhotographerAlbumsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // 1. Get assigned albums
-      const { data: assignments } = await supabase
-        .from("album_photographers")
-        .select("album_id")
-        .eq("photographer_id", user.id);
+      const isAdmin = user.user_metadata?.role === "admin";
+      let albumIds: string[] = [];
 
-      if (!assignments || assignments.length === 0) {
+      if (isAdmin) {
+        // Admin gets all albums
+        const { data: allAlbums } = await supabase
+          .from("albums")
+          .select("id")
+          .order("created_at", { ascending: false });
+        if (allAlbums) albumIds = allAlbums.map((a) => a.id);
+      } else {
+        // 1. Get assigned albums
+        const { data: assignments } = await supabase
+          .from("album_photographers")
+          .select("album_id")
+          .eq("photographer_id", user.id);
+
+        if (assignments) {
+          albumIds = assignments.map((a) => a.album_id);
+        }
+      }
+
+      if (albumIds.length === 0) {
         setIsLoading(false);
         return;
       }
-
-      const albumIds = assignments.map((a) => a.album_id);
 
       // 2. Fetch full album details
       const { data: albumData } = await supabase

@@ -10,7 +10,9 @@ interface ImagePreviewModalProps {
   onClose: () => void;
   onDownload: (image: GalleryImage) => void;
   onDelete: (image: GalleryImage) => void;
+  onSetCover?: (image: GalleryImage) => void;
   currentUserId: string;
+  isAdmin?: boolean;
 }
 
 export function ImagePreviewModal({
@@ -19,12 +21,14 @@ export function ImagePreviewModal({
   onClose,
   onDownload,
   onDelete,
-  currentUserId
+  onSetCover,
+  currentUserId,
+  isAdmin = false
 }: ImagePreviewModalProps) {
   if (!image) return null;
 
   const photographer = photographers.find(p => p.id === image.uploaded_by);
-  const isOwn = image.uploaded_by === currentUserId;
+  const isOwn = image.uploaded_by === currentUserId || isAdmin;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-bf-black/95 backdrop-blur-md p-4 md:p-10 animate-in fade-in duration-300">
@@ -41,7 +45,7 @@ export function ImagePreviewModal({
         {/* Image Display */}
         <div className="flex-1 relative bg-bf-black rounded-3xl overflow-hidden group">
           <Image
-            src={image.storage_path.startsWith('http') ? image.storage_path : `/api/images?path=${encodeURIComponent(image.storage_path)}`}
+            src={image.storage_path.startsWith('http') ? image.storage_path : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/event-photos/${image.storage_path}`}
             alt={image.filename}
             fill
             className="object-contain"
@@ -94,6 +98,15 @@ export function ImagePreviewModal({
               </svg>
               DOWNLOAD ORIGINAL
             </button>
+
+            {onSetCover && (
+              <button
+                onClick={() => onSetCover(image)}
+                className="w-full py-4 bg-white/10 text-white border border-white/20 rounded-2xl font-sans font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-3"
+              >
+                SET AS COVER
+              </button>
+            )}
 
             {isOwn && (
               <button

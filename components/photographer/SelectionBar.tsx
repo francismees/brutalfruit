@@ -3,7 +3,6 @@
 interface ImageActionBarProps {
   selectedCount: number;
   totalSelected: number;
-  ownSelectedCount: number;
   onDelete: () => void;
   onDownload: () => void;
   onClear: () => void;
@@ -12,15 +11,12 @@ interface ImageActionBarProps {
 
 export function ImageActionBar({
   selectedCount,
-  ownSelectedCount,
   onDelete,
   onDownload,
   onClear,
   isDeleting
 }: ImageActionBarProps) {
   if (selectedCount === 0) return null;
-
-  const othersSelected = selectedCount - ownSelectedCount;
 
   return (
     <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -48,9 +44,9 @@ export function ImageActionBar({
           <div className="relative group">
             <button
               onClick={onDelete}
-              disabled={ownSelectedCount === 0 || isDeleting}
+              disabled={isDeleting}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors text-sm font-sans ${
-                ownSelectedCount === 0 || isDeleting
+                isDeleting
                   ? "opacity-40 cursor-not-allowed text-bf-gray-400"
                   : "bg-bf-ruby text-white hover:bg-bf-ruby/90"
               }`}
@@ -58,15 +54,8 @@ export function ImageActionBar({
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              {isDeleting ? "Deleting..." : `Delete (${ownSelectedCount})`}
+              {isDeleting ? "Deleting..." : `Delete (${selectedCount})`}
             </button>
-            
-            {othersSelected > 0 && (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-3 py-1.5 bg-bf-ruby text-[0.6rem] text-white rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none uppercase font-bold tracking-tighter shadow-lg translate-y-2 group-hover:translate-y-0 duration-200">
-                {othersSelected} item{othersSelected !== 1 ? 's' : ''} belong to others and cannot be deleted
-                <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-bf-ruby" />
-              </div>
-            )}
           </div>
         </div>
 

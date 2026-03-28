@@ -20,7 +20,11 @@ export function AlbumCard({ album, photoCount, myPhotoCount }: AlbumCardProps) {
       <div className="aspect-[4/3] relative bg-bf-cream overflow-hidden">
         {album.cover_image_url ? (
           <Image
-            src={album.cover_image_url}
+            src={
+              album.cover_image_url.startsWith("http")
+                ? album.cover_image_url
+                : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/event-photos/${album.cover_image_url}`
+            }
             alt={album.name}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"

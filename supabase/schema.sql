@@ -75,6 +75,25 @@ CREATE POLICY "Admins can do everything with albums"
     (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
   );
 
+-- Photographers can update albums they are assigned to (e.g. to set cover image)
+DROP POLICY IF EXISTS "Photographers can update assigned albums" ON albums;
+CREATE POLICY "Photographers can update assigned albums"
+  ON albums FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM album_photographers
+      WHERE album_photographers.album_id = albums.id
+      AND album_photographers.photographer_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM album_photographers
+      WHERE album_photographers.album_id = albums.id
+      AND album_photographers.photographer_id = auth.uid()
+    )
+  );
+
 -- Images
 ALTER TABLE images ENABLE ROW LEVEL SECURITY;
 
@@ -204,9 +223,16 @@ ALTER TABLE albums ADD COLUMN IF NOT EXISTS description TEXT;
 -- Photographers Delete Policy
 -- ============================================
 DROP POLICY IF EXISTS "Photographers can delete own images" ON images;
-CREATE POLICY "Photographers can delete own images"
+DROP POLICY IF EXISTS "Photographers can delete assigned images" ON images;
+CREATE POLICY "Photographers can delete assigned images"
   ON images FOR DELETE
-  USING (uploaded_by = auth.uid());
+  USING (
+    EXISTS (
+      SELECT 1 FROM album_photographers
+      WHERE album_photographers.album_id = images.album_id
+      AND album_photographers.photographer_id = auth.uid()
+    )
+  );
 
 -- ============================================
 -- Storage Policies (bucket_id: 'event-photos')
@@ -225,12 +251,20 @@ CREATE POLICY "Authenticated can upload event photos"
   TO authenticated
   WITH CHECK (bucket_id = 'event-photos');
 
--- Allow photographers/admins to delete their own uploaded files
-DROP POLICY IF EXISTS "Users can delete own event photos" ON storage.objects;
-CREATE POLICY "Users can delete own event photos"
-  ON storage.objects FOR DELETE
+-- Allow photographers to update their own files (essential for TUS resumable uploads > 6MB)
+DROP POLICY IF EXISTS "Users can update own event photos" ON storage.objects;
+CREATE POLICY "Users can update own event photos"
+  ON storage.objects FOR UPDATE
   TO authenticated
   USING (bucket_id = 'event-photos' AND auth.uid() = owner);
+
+-- Allow photographers/admins to delete files
+DROP POLICY IF EXISTS "Users can delete own event photos" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete event photos" ON storage.objects;
+CREATE POLICY "Users can delete event photos"
+  ON storage.objects FOR DELETE
+  TO authenticated
+  USING (bucket_id = 'event-photos');
 
 -- Allow admins full control over the bucket
 DROP POLICY IF EXISTS "Admins have full control of event photos" ON storage.objects;

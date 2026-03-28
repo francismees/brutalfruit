@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ImageGrid } from "@/components/photographer/ImageGrid";
 import { ReorderGrid } from "@/components/photographer/ReorderGrid";
-import { SelectionBar } from "@/components/photographer/SelectionBar";
+import { ImageActionBar } from "@/components/photographer/SelectionBar";
 import { ImagePreviewModal } from "@/components/photographer/ImagePreviewModal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import JSZip from "jszip";
@@ -21,6 +21,7 @@ export default function AlbumManagementPage() {
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [photographers, setPhotographers] = useState<Photographer[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   const [isLoading, setIsLoading] = useState(true);
   const [isReorderMode, setIsReorderMode] = useState(false);
@@ -38,6 +39,7 @@ export default function AlbumManagementPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     setCurrentUser(user);
+    setIsAdmin(user.user_metadata?.role === "admin");
 
     // Album Data
     const { data: albumData } = await supabase
@@ -84,12 +86,7 @@ export default function AlbumManagementPage() {
     return images.filter(img => img.uploaded_by === filter);
   }, [images, filter, currentUser]);
 
-  const ownSelectedCount = useMemo(() => {
-    return Array.from(selectedIds).reduce((acc, id) => {
-      const img = images.find(i => i.id === id);
-      return img?.uploaded_by === currentUser?.id ? acc + 1 : acc;
-    }, 0);
-  }, [selectedIds, images, currentUser]);
+  const ownSelectedCount = selectedIds.size;
 
   // Handlers
   const handleToggleSelect = (id: string) => {
@@ -110,10 +107,10 @@ export default function AlbumManagementPage() {
   };
 
   const handleDeleteSelected = async () => {
-    if (!confirm(`Are you sure you want to delete ${ownSelectedCount} of your uploaded images?`)) return;
+    if (!confirm(`Are you sure you want to delete ${ownSelectedCount} selected image(s)?`)) return;
 
     const supabase = createClient();
-    const toDelete = images.filter(img => selectedIds.has(img.id) && img.uploaded_by === currentUser?.id);
+    const toDelete = images.filter(img => selectedIds.has(img.id));
     
     // 1. Storage Deletion
     const paths = toDelete.map(img => img.storage_path);
@@ -159,6 +156,22 @@ export default function AlbumManagementPage() {
 
     const content = await zip.generateAsync({ type: "blob" });
     saveAs(content, `${album?.slug || "gallery"}-selection.zip`);
+  };
+
+  const handleSetCover = async (image: GalleryImage) => {
+    if (!album) return;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("albums")
+      .update({ cover_image_url: image.storage_path })
+      .eq("id", album.id);
+
+    if (!error) {
+      setAlbum({ ...album, cover_image_url: image.storage_path });
+      setPreviewImage(null);
+    } else {
+      alert("Failed to set album cover. Check permissions.");
+    }
   };
 
   const handleOrderChange = (newOrder: GalleryImage[]) => {
@@ -325,10 +338,9 @@ export default function AlbumManagementPage() {
         )}
       </div>
 
-      <SelectionBar 
+      <ImageActionBar 
         selectedCount={selectedIds.size}
         totalSelected={selectedIds.size}
-        ownSelectedCount={ownSelectedCount}
         onDelete={handleDeleteSelected}
         onDownload={handleDownloadSelected}
         onClear={handleDeselectAll}
@@ -347,7 +359,9 @@ export default function AlbumManagementPage() {
            handleDeleteSelected();
            setPreviewImage(null);
         }}
+        onSetCover={handleSetCover}
         currentUserId={currentUser?.id}
+        isAdmin={isAdmin}
       />
     </div>
   );
