@@ -3,19 +3,27 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, displayName } = await request.json();
+    const { username, password, displayName } = await request.json();
 
-    if (!email || !password || !displayName) {
+    if (!username || !password || !displayName) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
+
+    if (password.length < 6) {
+      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+    }
+
+    // Generate a synthetic email — Supabase Auth requires one,
+    // but the photographer logs in with this as their "email" credential
+    const syntheticEmail = `${username}@brutalfruit.local`;
 
     const supabase = createAdminClient();
 
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email,
+      email: syntheticEmail,
       password,
       email_confirm: true,
-      user_metadata: { role: "photographer" },
+      user_metadata: { role: "photographer", username },
     });
 
     if (authError) {
@@ -36,3 +44,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+

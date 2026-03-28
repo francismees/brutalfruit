@@ -16,7 +16,7 @@ export default function PhotographersManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formName, setFormName] = useState("");
-  const [formEmail, setFormEmail] = useState("");
+  const [formUsername, setFormUsername] = useState("");
   const [formPassword, setFormPassword] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -45,7 +45,7 @@ export default function PhotographersManagementPage() {
   useEffect(() => { fetchData(); }, []);
 
   const handleCreate = async () => {
-    if (!formName || !formEmail || !formPassword) return;
+    if (!formName || !formUsername || !formPassword) return;
     setIsSaving(true);
     setError("");
 
@@ -55,7 +55,7 @@ export default function PhotographersManagementPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: formEmail,
+          username: formUsername,
           password: formPassword,
           displayName: formName,
         }),
@@ -70,7 +70,7 @@ export default function PhotographersManagementPage() {
 
       setShowForm(false);
       setFormName("");
-      setFormEmail("");
+      setFormUsername("");
       setFormPassword("");
       fetchData();
     } catch {
@@ -167,8 +167,8 @@ export default function PhotographersManagementPage() {
       <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Onboard Photographer">
         <div className="space-y-4">
           <Input label="Display Name" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="e.g. Marco Di Luca" />
-          <Input label="Email" type="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="photographer@email.com" />
-          <Input label="Temporary Password" type="text" value={formPassword} onChange={(e) => setFormPassword(e.target.value)} placeholder="Min 8 characters" error={error} />
+          <Input label="Username" value={formUsername} onChange={(e) => setFormUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} placeholder="e.g. marco_event1" />
+          <Input label="Password" type="text" value={formPassword} onChange={(e) => setFormPassword(e.target.value)} placeholder="Min 6 characters" error={error} />
           <div className="flex gap-3 pt-2">
             <Button variant="outline" onClick={() => setShowForm(false)} className="flex-1">Cancel</Button>
             <Button variant="gradient" onClick={handleCreate} disabled={isSaving} className="flex-1">

@@ -45,17 +45,17 @@ const inter = Inter({
 /* ─── Metadata ─── */
 export const metadata: Metadata = {
   title: {
-    default: "Selfie — Brutal Fruit Gallery",
-    template: "%s | Selfie",
+    default: "Brutal Fruit Tanzania - Gallery",
+    template: "%s | Brutal Fruit Tanzania",
   },
   description:
     "Browse and download photos from Brutal Fruit events. Experience the sparkle of sophisticated refreshment.",
   metadataBase: new URL("https://brutalfruit.co.tz"),
   openGraph: {
-    title: "Selfie — Brutal Fruit Gallery",
+    title: "Brutal Fruit Tanzania - Gallery",
     description: "Browse and download photos from Brutal Fruit events.",
     url: "https://brutalfruit.co.tz",
-    siteName: "Selfie",
+    siteName: "Brutal Fruit Tanzania",
     type: "website",
   },
 };

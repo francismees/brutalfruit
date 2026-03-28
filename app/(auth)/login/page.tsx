@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -20,13 +20,15 @@ export default function LoginPage() {
     setIsLoading(true);
 
     const supabase = createClient();
+    // If input contains @, treat as email (admin); otherwise append synthetic domain
+    const loginEmail = username.includes("@") ? username : `${username}@brutalfruit.local`;
     const { data, error: authError } = await supabase.auth.signInWithPassword({
-      email,
+      email: loginEmail,
       password,
     });
 
     if (authError) {
-      setError("Invalid email or password.");
+      setError("Invalid username or password.");
       setIsLoading(false);
       return;
     }
@@ -52,11 +54,11 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="photographer@example.com"
+              label="Username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value.toLowerCase())}
+              placeholder="your username"
               required
             />
             <Input
