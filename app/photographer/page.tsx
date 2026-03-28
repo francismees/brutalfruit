@@ -116,7 +116,7 @@ export default function PhotographerPage() {
     <div className="flex-1 overflow-y-auto">
       {/* Header */}
       <header className="flex items-center justify-between px-6 lg:px-8 py-5 border-b border-bf-gray-200 bg-white">
-        <h2 className="label-ui text-bf-gray-700 tracking-wider">GOLDEN HOUR ADMIN</h2>
+        <h2 className="label-ui text-bf-gray-700 tracking-wider">PHOTOGRAPHER DASHBOARD</h2>
         <div className="flex items-center gap-4">
           <span className="label-ui text-bf-rosegold-flat">Upload Center</span>
         </div>

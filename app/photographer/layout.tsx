@@ -7,7 +7,6 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/BrandLogo";
 
 const photographerNav = [
-  { href: "/photographer", label: "Dashboard", icon: "grid" },
   { href: "/photographer", label: "Upload Center", icon: "upload", active: true },
 ];
 
@@ -48,11 +47,21 @@ export default function PhotographerLayout({
     <div className="min-h-screen bg-bf-cream flex">
       {/* Sidebar — desktop only */}
       <aside className="hidden lg:flex flex-col w-60 bg-white border-r border-bf-gray-200 p-5">
-        <div className="mb-8">
-          <p className="heading-display-italic text-sm" style={{ color: "var(--bf-rosegold-start)" }}>
-            Editorial Admin
-          </p>
-          <p className="label-ui text-bf-gray-400 text-[0.6rem] mt-0.5">MANAGING THE GLOW</p>
+        <div className="mb-10">
+          <div 
+            className="w-32 h-5 bg-rosegold" 
+            style={{ 
+              WebkitMaskImage: 'url(/bf-logo-wordmark.svg)', 
+              WebkitMaskSize: 'contain', 
+              WebkitMaskRepeat: 'no-repeat', 
+              WebkitMaskPosition: 'left center',
+              maskImage: 'url(/bf-logo-wordmark.svg)',
+              maskSize: 'contain',
+              maskRepeat: 'no-repeat',
+              maskPosition: 'left center',
+            }} 
+            title="Brutal Fruit"
+          />
         </div>
 
         <nav className="flex-1 space-y-1">
