@@ -36,43 +36,22 @@ export default function GalleryPage() {
 
   return (
     <div className="min-h-screen flex flex-col pb-20 md:pb-0">
-      {/* Mobile header */}
-      <header className="flex items-center justify-between px-5 py-4 sticky top-0 z-30 bg-bf-blush/90 backdrop-blur-sm md:hidden">
-        {albums.length > 1 ? (
-          <Link href="/albums" className="w-8 h-8 flex items-center justify-center text-bf-black">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </Link>
-        ) : (
-          <div className="w-8" />
-        )}
-        <BrandLogo variant="wordmark" width={100} height={16} className="opacity-80" />
-        <button className="w-8 h-8 flex items-center justify-center text-bf-black">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <circle cx="11" cy="11" r="8" />
-            <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
-          </svg>
-        </button>
-      </header>
-
-      {/* Desktop header */}
-      <header className="hidden md:flex items-center justify-between px-8 py-5 border-b border-bf-gray-200">
-        <span className="heading-display text-lg tracking-wide" style={{ color: "var(--bf-rosegold-start)" }}>
-          BRUTAL FRUIT
-        </span>
-        <nav className="flex items-center gap-8">
-          <span className="label-ui text-bf-black border-b-2 border-bf-rosegold-flat pb-1">GALLERY</span>
-          <Link href="#" className="label-ui text-bf-gray-400 hover:text-bf-black transition-colors">ABOUT</Link>
-        </nav>
-        <div className="flex items-center gap-4">
-          <button className="w-8 h-8 flex items-center justify-center text-bf-gray-400 hover:text-bf-black">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          </button>
-        </div>
+      {/* Unified Header */}
+      <header className="flex items-center justify-center px-5 py-5 sticky top-0 z-30 bg-white/90 backdrop-blur-sm border-b border-bf-gray-200">
+        <div 
+          className="w-36 md:w-48 h-6 md:h-8 bg-gradient-rosegold" 
+          style={{ 
+            WebkitMaskImage: 'url(/bf-logo-wordmark.svg)', 
+            WebkitMaskSize: 'contain', 
+            WebkitMaskRepeat: 'no-repeat', 
+            WebkitMaskPosition: 'center',
+            maskImage: 'url(/bf-logo-wordmark.svg)',
+            maskSize: 'contain',
+            maskRepeat: 'no-repeat',
+            maskPosition: 'center',
+          }} 
+          title="Brutal Fruit"
+        />
       </header>
 
       {/* Gallery header */}
