@@ -29,22 +29,37 @@ export default function PhotographerPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get assigned album IDs
-      const { data: assignments } = await supabase
-        .from("album_photographers")
-        .select("album_id")
-        .eq("photographer_id", user.id);
+      const isAdmin = user.user_metadata?.role === "admin";
 
-      if (assignments && assignments.length > 0) {
-        const albumIds = assignments.map((a) => a.album_id);
+      if (isAdmin) {
+        // Admin gets all active/published albums
         const { data: albumData } = await supabase
           .from("albums")
           .select("*")
-          .in("id", albumIds);
+          .order("created_at", { ascending: false });
 
         if (albumData) {
           setAlbums(albumData);
           if (albumData.length > 0) setSelectedAlbumId(albumData[0].id);
+        }
+      } else {
+        // Photographer gets explicitly assigned albums
+        const { data: assignments } = await supabase
+          .from("album_photographers")
+          .select("album_id")
+          .eq("photographer_id", user.id);
+
+        if (assignments && assignments.length > 0) {
+          const albumIds = assignments.map((a) => a.album_id);
+          const { data: albumData } = await supabase
+            .from("albums")
+            .select("*")
+            .in("id", albumIds);
+
+          if (albumData) {
+            setAlbums(albumData);
+            if (albumData.length > 0) setSelectedAlbumId(albumData[0].id);
+          }
         }
       }
       setIsLoadingAlbums(false);
