@@ -4,6 +4,7 @@ export interface Album {
   id: string;
   name: string;
   slug: string;
+  description: string | null;
   event_date: string | null;
   cover_image_url: string | null;
   is_published: boolean;

@@ -15,6 +15,7 @@ export default function AlbumsManagementPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingAlbum, setEditingAlbum] = useState<Album | null>(null);
   const [formName, setFormName] = useState("");
+  const [formDescription, setFormDescription] = useState("");
   const [formDate, setFormDate] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -41,6 +42,7 @@ export default function AlbumsManagementPage() {
         .update({
           name: formName,
           slug: slugify(formName),
+          description: formDescription || null,
           event_date: formDate || null,
         })
         .eq("id", editingAlbum.id);
@@ -48,6 +50,7 @@ export default function AlbumsManagementPage() {
       await supabase.from("albums").insert({
         name: formName,
         slug: slugify(formName),
+        description: formDescription || null,
         event_date: formDate || null,
       });
     }
@@ -55,6 +58,7 @@ export default function AlbumsManagementPage() {
     setShowForm(false);
     setEditingAlbum(null);
     setFormName("");
+    setFormDescription("");
     setFormDate("");
     setIsSaving(false);
     fetchAlbums();
@@ -70,6 +74,7 @@ export default function AlbumsManagementPage() {
   const openEdit = (album: Album) => {
     setEditingAlbum(album);
     setFormName(album.name);
+    setFormDescription(album.description || "");
     setFormDate(album.event_date || "");
     setShowForm(true);
   };
@@ -77,6 +82,7 @@ export default function AlbumsManagementPage() {
   const openCreate = () => {
     setEditingAlbum(null);
     setFormName("");
+    setFormDescription("");
     setFormDate("");
     setShowForm(true);
   };
@@ -146,6 +152,15 @@ export default function AlbumsManagementPage() {
       <Modal isOpen={showForm} onClose={() => setShowForm(false)} title={editingAlbum ? "Edit Album" : "Create Album"}>
         <div className="space-y-4">
           <Input label="Album Name" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="e.g. Golden Hour Brunch" />
+          <div>
+            <label className="label-ui text-bf-gray-400 block mb-1">Description</label>
+            <textarea
+              value={formDescription}
+              onChange={(e) => setFormDescription(e.target.value)}
+              placeholder="e.g. A curated editorial of moments captured at the scenic waterfront."
+              className="w-full flex min-h-[80px] rounded-xl border border-bf-gray-200 bg-white px-4 py-3 text-sm font-sans placeholder:text-bf-gray-300 focus:outline-none focus:ring-2 focus:ring-bf-rosegold-flat transition-shadow resize-none"
+            />
+          </div>
           <Input label="Event Date" type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
           <div className="flex gap-3 pt-2">
             <Button variant="outline" onClick={() => setShowForm(false)} className="flex-1">Cancel</Button>

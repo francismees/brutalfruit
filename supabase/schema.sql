@@ -7,11 +7,12 @@
 CREATE TABLE IF NOT EXISTS albums (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name            TEXT NOT NULL,
-  slug            TEXT UNIQUE NOT NULL,
+  slug            TEXT NOT NULL UNIQUE,
+  description     TEXT,
   event_date      DATE,
   cover_image_url TEXT,
-  is_published    BOOLEAN DEFAULT FALSE,
-  bulk_download   BOOLEAN DEFAULT FALSE,
+  is_published    BOOLEAN DEFAULT false,
+  bulk_download   BOOLEAN DEFAULT false,
   created_at      TIMESTAMPTZ DEFAULT NOW(),
   updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
@@ -146,6 +147,9 @@ CREATE TRIGGER albums_updated_at
   BEFORE UPDATE ON albums
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at();
+
+-- Force add columns if they don't exist
+ALTER TABLE albums ADD COLUMN IF NOT EXISTS description TEXT;
 
 -- ============================================
 -- Photographers Delete Policy

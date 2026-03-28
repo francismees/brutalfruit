@@ -77,12 +77,12 @@ export default function GalleryPage() {
 
       {/* Gallery header */}
       <section className="px-6 md:px-8 pt-8 pb-6">
-        <h1 className="heading-display-italic text-3xl md:text-5xl mb-3">The Gallery</h1>
+        <h1 className="heading-display-italic text-3xl md:text-5xl mb-3">
+          {album ? album.name : "The Gallery"}
+        </h1>
         {album && (
-          <p className="text-editorial text-bf-text-secondary max-w-lg">
-            A curated editorial of moments captured during{" "}
-            <em>{album.name}</em>. Elegant celebrations, sun-drenched landscapes,
-            and the ruby sparkle of Brutal Fruit.
+          <p className="text-editorial text-bf-text-secondary max-w-lg whitespace-pre-line">
+            {album.description || `A curated editorial of moments captured during ${album.name}. Elegant celebrations, sun-drenched landscapes, and the ruby sparkle of Brutal Fruit.`}
           </p>
         )}
       </section>
