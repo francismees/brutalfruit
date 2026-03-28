@@ -112,6 +112,25 @@ CREATE POLICY "Photographers can view assigned album images"
     )
   );
 
+-- Photographers can reorder images in their assigned albums
+DROP POLICY IF EXISTS "Photographers can reorder assigned album images" ON images;
+CREATE POLICY "Photographers can reorder assigned album images"
+  ON images FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM album_photographers
+      WHERE album_photographers.album_id = images.album_id
+      AND album_photographers.photographer_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM album_photographers
+      WHERE album_photographers.album_id = images.album_id
+      AND album_photographers.photographer_id = auth.uid()
+    )
+  );
+
 DROP POLICY IF EXISTS "Admins can do everything with images" ON images;
 CREATE POLICY "Admins can do everything with images"
   ON images FOR ALL

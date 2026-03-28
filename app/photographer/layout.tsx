@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import { BrandLogo } from "@/components/BrandLogo";
 
 const photographerNav = [
-  { href: "/photographer", label: "Upload Center", icon: "upload", active: true },
+  { href: "/photographer", label: "Upload Center", icon: "upload" },
+  { href: "/photographer/albums", label: "Photo Albums", icon: "albums" },
 ];
 
 export default function PhotographerLayout({
@@ -18,6 +18,7 @@ export default function PhotographerLayout({
   const [isAuthed, setIsAuthed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     async function checkAuth() {
@@ -65,19 +66,26 @@ export default function PhotographerLayout({
         </div>
 
         <nav className="flex-1 space-y-1">
-          {photographerNav.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-sans transition-colors ${
-                item.active
-                  ? "bg-bf-cream text-bf-black font-medium"
-                  : "text-bf-gray-400 hover:text-bf-black hover:bg-bf-cream/50"
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {photographerNav.map((item) => {
+            const isActive = 
+              item.href === "/photographer" 
+                ? pathname === "/photographer" 
+                : pathname.startsWith(item.href);
+            
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-sans transition-colors ${
+                  isActive
+                    ? "bg-bf-cream text-bf-black font-medium"
+                    : "text-bf-gray-400 hover:text-bf-black hover:bg-bf-cream/50"
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <button
