@@ -58,23 +58,22 @@ CREATE INDEX IF NOT EXISTS idx_albums_is_published ON albums(is_published);
 -- Albums
 ALTER TABLE albums ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Public can view published albums" ON albums;
 CREATE POLICY "Public can view published albums"
   ON albums FOR SELECT
   USING (is_published = true);
 
+DROP POLICY IF EXISTS "Admins can do everything with albums" ON albums;
 CREATE POLICY "Admins can do everything with albums"
   ON albums FOR ALL
   USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.raw_user_meta_data ->> 'role' = 'admin'
-    )
+    (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
   );
 
 -- Images
 ALTER TABLE images ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Public can view images in published albums" ON images;
 CREATE POLICY "Public can view images in published albums"
   ON images FOR SELECT
   USING (
@@ -85,6 +84,7 @@ CREATE POLICY "Public can view images in published albums"
     )
   );
 
+DROP POLICY IF EXISTS "Photographers can upload to assigned albums" ON images;
 CREATE POLICY "Photographers can upload to assigned albums"
   ON images FOR INSERT
   WITH CHECK (
@@ -95,42 +95,34 @@ CREATE POLICY "Photographers can upload to assigned albums"
     )
   );
 
+DROP POLICY IF EXISTS "Admins can do everything with images" ON images;
 CREATE POLICY "Admins can do everything with images"
   ON images FOR ALL
   USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.raw_user_meta_data ->> 'role' = 'admin'
-    )
+    (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
   );
 
 -- Photographers
 ALTER TABLE photographers ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admins can manage photographers" ON photographers;
 CREATE POLICY "Admins can manage photographers"
   ON photographers FOR ALL
   USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.raw_user_meta_data ->> 'role' = 'admin'
-    )
+    (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
   );
 
 -- Album Photographers
 ALTER TABLE album_photographers ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admins can manage assignments" ON album_photographers;
 CREATE POLICY "Admins can manage assignments"
   ON album_photographers FOR ALL
   USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.raw_user_meta_data ->> 'role' = 'admin'
-    )
+    (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
   );
 
+DROP POLICY IF EXISTS "Photographers can view own assignments" ON album_photographers;
 CREATE POLICY "Photographers can view own assignments"
   ON album_photographers FOR SELECT
   USING (photographer_id = auth.uid());
