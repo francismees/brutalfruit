@@ -206,17 +206,25 @@ export default function PhotographerPage() {
                     <div className="w-12 h-12 rounded-lg bg-bf-cream shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-sans truncate">{file.name}</p>
-                    <div className="w-full bg-bf-cream rounded-full h-1.5 mt-1.5">
-                      <div
-                        className="bg-rosegold h-1.5 rounded-full transition-all duration-300"
-                        style={{ width: `${file.progress}%` }}
-                      />
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm font-sans truncate pr-2">{file.name}</p>
+                      <span className="text-xs font-sans text-bf-gray-400 tabular-nums shrink-0">
+                        {file.status === "error" ? "Failed" : `${file.progress}%`}
+                      </span>
                     </div>
+                    {file.status === "error" ? (
+                      <p className="text-xs text-red-500 font-sans mt-1 max-w-full truncate" title={file.error}>
+                        {file.error}
+                      </p>
+                    ) : (
+                      <div className="w-full bg-bf-cream rounded-full h-1.5 mt-1.5">
+                        <div
+                          className="bg-rosegold h-1.5 rounded-full transition-all duration-300"
+                          style={{ width: `${file.progress}%` }}
+                        />
+                      </div>
+                    )}
                   </div>
-                  <span className="text-xs font-sans text-bf-gray-400 tabular-nums shrink-0">
-                    {file.progress}%
-                  </span>
                 </div>
               ))}
             </div>

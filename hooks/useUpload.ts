@@ -49,6 +49,9 @@ export function useUpload({ albumId, onComplete }: UseUploadOptions) {
 
     activeUploads.current++;
     const supabase = createClient();
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    
     const storagePath = `${albumId}/${Date.now()}-${next.file.name}`;
 
     // Update status
@@ -90,6 +93,7 @@ export function useUpload({ albumId, onComplete }: UseUploadOptions) {
         file_size: next.file.size,
         width,
         height,
+        uploaded_by: user?.id,
       });
 
       if (dbError) throw dbError;
@@ -101,6 +105,7 @@ export function useUpload({ albumId, onComplete }: UseUploadOptions) {
         )
       );
     } catch (err) {
+      console.error("Upload failed for", next.name, err);
       setFiles((prev) =>
         prev.map((f) =>
           f.id === next.id
