@@ -20,7 +20,9 @@ export function Footer() {
         />
       </div>
       <p className="text-xs text-bf-gray-400 font-sans max-w-sm mx-auto leading-relaxed">
-        © 2026 Brutal Fruit. Not For Persons Under the Age of 18. Please Enjoy Brutal Fruit Responsibly.
+        © 2026 Brutal Fruit.<br />
+        Not For Persons Under the Age of 18.<br />
+        Please Enjoy Brutal Fruit Responsibly.
       </p>
     </footer>
   );
