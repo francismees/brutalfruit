@@ -60,9 +60,15 @@ export function useUpload({ albumId, onComplete }: UseUploadOptions) {
     // MUTATE SYNCHRONOUSLY BEFORE ANY AWAIT 
     // to prevent the for-loop from spawning duplicate threads on the same target file.
     next.status = "uploading";
-    setFiles((prev) =>
-      prev.map((f) => (f.id === next.id ? { ...f, status: "uploading" as const } : f))
-    );
+    
+    // Simulate progress tick
+    let currentProgress = 5;
+    const progressTicker = setInterval(() => {
+      currentProgress = Math.min(currentProgress + Math.random() * 15, 95);
+      setFiles((prev) =>
+        prev.map((f) => (f.id === next.id ? { ...f, status: "uploading" as const, progress: Math.round(currentProgress) } : f))
+      );
+    }, 800);
 
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -143,6 +149,7 @@ export function useUpload({ albumId, onComplete }: UseUploadOptions) {
         )
       );
     } finally {
+      clearInterval(progressTicker);
       activeUploads.current--;
       uploadNext();
     }
