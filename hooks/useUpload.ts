@@ -20,17 +20,24 @@ export function useUpload({ albumId, onComplete }: UseUploadOptions) {
     const fileArray = Array.from(newFiles);
     const uploadFiles: UploadFile[] = fileArray
       .filter((f) => f.size <= MAX_FILE_SIZE)
-      .map((file) => ({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        file,
-        name: file.name,
-        size: file.size,
-        progress: 0,
-        status: "pending" as const,
-        previewUrl: file.type.startsWith("image/")
-          ? URL.createObjectURL(file)
-          : undefined,
-      }));
+      .map((file) => {
+        const sanitizedFilename = file.name
+          .replace(/[^\w\s.-]/g, "")
+          .replace(/\s+/g, "-")
+          .toLowerCase();
+
+        return {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+          file,
+          name: sanitizedFilename,
+          size: file.size,
+          progress: 0,
+          status: "pending" as const,
+          previewUrl: file.type.startsWith("image/")
+            ? URL.createObjectURL(file)
+            : undefined,
+        };
+      });
 
     setFiles((prev) => [...prev, ...uploadFiles]);
     queueRef.current = [...queueRef.current, ...uploadFiles];
@@ -52,7 +59,7 @@ export function useUpload({ albumId, onComplete }: UseUploadOptions) {
     
     const { data: { user } } = await supabase.auth.getUser();
     
-    const storagePath = `${albumId}/${Date.now()}-${next.file.name}`;
+    const storagePath = `${albumId}/${Date.now()}-${next.name}`;
 
     // Update status
     setFiles((prev) =>
@@ -89,7 +96,7 @@ export function useUpload({ albumId, onComplete }: UseUploadOptions) {
       const { error: dbError } = await supabase.from("images").insert({
         album_id: albumId,
         storage_path: storagePath,
-        filename: next.file.name,
+        filename: next.name,
         file_size: next.file.size,
         width,
         height,
