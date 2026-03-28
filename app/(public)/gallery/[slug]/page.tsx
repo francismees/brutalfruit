@@ -35,7 +35,7 @@ export default function GalleryPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col pb-20 md:pb-0">
+    <div className="pb-20 md:pb-0">
       {/* Unified Header */}
       <header className="flex items-center justify-center px-5 py-5 sticky top-0 z-30 bg-white/90 backdrop-blur-sm border-b border-bf-gray-200">
         <div 

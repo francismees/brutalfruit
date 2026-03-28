@@ -21,7 +21,7 @@ export default function AlbumsPage() {
   }, [albums, isLoading, router]);
 
   return (
-    <div className="min-h-screen flex flex-col pb-20 md:pb-0">
+    <div className="pb-20 md:pb-0">
       {/* Header */}
       <header className="flex items-center justify-between px-5 py-4 sticky top-0 z-30 bg-bf-blush/90 backdrop-blur-sm">
         <button className="w-8 h-8 flex items-center justify-center text-bf-black">

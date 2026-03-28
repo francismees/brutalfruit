@@ -71,7 +71,7 @@ export default function RootLayout({
       lang="en"
       className={`${gtSuperDisplay.variable} ${gtSuperText.variable} ${inter.variable}`}
     >
-      <body className="min-h-screen">{children}</body>
+      <body>{children}</body>
     </html>
   );
 }
