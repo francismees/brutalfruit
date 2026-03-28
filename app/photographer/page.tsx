@@ -96,12 +96,13 @@ export default function PhotographerPage() {
     }
   };
 
-  const handleDelete = async (imageId: string, storagePath: string) => {
+  const handleDelete = async (imageId: string, storagePath: string, thumbnailPath?: string | null) => {
     if (!confirm("Are you sure you want to delete this image?")) return;
     const supabase = createClient();
     
     // Attempt storage deletion
-    await supabase.storage.from("event-photos").remove([storagePath]);
+    const pathsToDelete = [storagePath, thumbnailPath].filter(Boolean) as string[];
+    await supabase.storage.from("event-photos").remove(pathsToDelete);
     
     // Database deletion
     await supabase.from("images").delete().eq("id", imageId);
@@ -256,7 +257,7 @@ export default function PhotographerPage() {
                 <div key={image.id} className="group relative">
                   <div className="relative aspect-square rounded-lg overflow-hidden bg-bf-cream">
                     <Image
-                      src={getThumbnailUrl(image.storage_path, 300, 75)}
+                      src={getThumbnailUrl(image.thumbnail_path || image.storage_path, 300, 75)}
                       alt={image.filename}
                       fill
                       sizes="200px"
@@ -264,7 +265,7 @@ export default function PhotographerPage() {
                     />
                   </div>
                   <button
-                    onClick={() => handleDelete(image.id, image.storage_path)}
+                    onClick={() => handleDelete(image.id, image.storage_path, image.thumbnail_path)}
                     className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
                     title="Delete image"
                   >

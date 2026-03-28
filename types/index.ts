@@ -16,6 +16,7 @@ export interface GalleryImage {
   id: string;
   album_id: string;
   storage_path: string;
+  thumbnail_path?: string | null;
   filename: string;
   file_size: number | null;
   width: number | null;

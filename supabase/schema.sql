@@ -21,14 +21,18 @@ CREATE TABLE IF NOT EXISTS images (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   album_id        UUID NOT NULL REFERENCES albums(id) ON DELETE CASCADE,
   storage_path    TEXT NOT NULL,
+  thumbnail_path  TEXT,
   filename        TEXT NOT NULL,
   file_size       BIGINT,
   width           INTEGER,
   height          INTEGER,
-  uploaded_by     UUID REFERENCES auth.users(id),
+  uploaded_by     UUID DEFAULT auth.uid() REFERENCES auth.users(id),
   sort_order      INTEGER DEFAULT 0,
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Force add the column if it doesn't exist to avoid tearing down the MVP testing data
+ALTER TABLE images ADD COLUMN IF NOT EXISTS thumbnail_path TEXT;
 
 -- Photographers
 CREATE TABLE IF NOT EXISTS photographers (

@@ -6,10 +6,13 @@ interface ImageCardProps {
   image: GalleryImage;
   onClick: () => void;
   index: number;
+  priority?: boolean;
 }
 
-export function ImageCard({ image, onClick, index }: ImageCardProps) {
-  const thumbnailUrl = getThumbnailUrl(image.storage_path, 400, 80);
+export function ImageCard({ image, onClick, index, priority = false }: ImageCardProps) {
+  // Generate URLs. Because we bypass premium Supabase Image transforms,
+  // we first check for our client-generated WebP thumbnail.
+  const thumbnailUrl = getThumbnailUrl(image.thumbnail_path || image.storage_path, 400, 80);
 
   return (
     <button

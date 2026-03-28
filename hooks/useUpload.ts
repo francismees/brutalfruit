@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { STORAGE_BUCKET, MAX_CONCURRENT_UPLOADS, MAX_FILE_SIZE } from "@/lib/constants";
+import { generateClientThumbnail } from "@/lib/image-utils";
 import type { UploadFile } from "@/types";
 
 interface UseUploadOptions {
@@ -68,7 +69,26 @@ export function useUpload({ albumId, onComplete }: UseUploadOptions) {
     next.status = "uploading";
 
     try {
-      // Upload to Supabase Storage
+      // Create and Upload Thumbnail (Fire and Forget or parallel)
+      let thumbStoragePath: string | null = null;
+      try {
+        const thumbnailBlob = await generateClientThumbnail(next.file, 800);
+        if (thumbnailBlob) {
+          const nameWithoutExt = next.name.substring(0, next.name.lastIndexOf('.')) || next.name;
+          thumbStoragePath = `${albumId}/thumb-${Date.now()}-${nameWithoutExt}.webp`;
+          
+          await supabase.storage
+            .from(STORAGE_BUCKET)
+            .upload(thumbStoragePath, thumbnailBlob, {
+              cacheControl: "3600",
+              upsert: false,
+            });
+        }
+      } catch (err) {
+        console.warn("Could not handle thumbnail processing:", err);
+      }
+
+      // Upload Original to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from(STORAGE_BUCKET)
         .upload(storagePath, next.file, {
@@ -96,6 +116,7 @@ export function useUpload({ albumId, onComplete }: UseUploadOptions) {
       const { error: dbError } = await supabase.from("images").insert({
         album_id: albumId,
         storage_path: storagePath,
+        thumbnail_path: thumbStoragePath,
         filename: next.name,
         file_size: next.file.size,
         width,

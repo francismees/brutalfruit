@@ -56,7 +56,7 @@ export default function AlbumDetailPage() {
     // Delete storage files
     const pathsToDelete = images
       .filter((i) => ids.includes(i.id))
-      .map((i) => i.storage_path);
+      .flatMap((i) => [i.storage_path, i.thumbnail_path].filter(Boolean) as string[]);
 
     await supabase.storage.from("event-photos").remove(pathsToDelete);
     await supabase.from("images").delete().in("id", ids);
@@ -111,13 +111,15 @@ export default function AlbumDetailPage() {
                   selected.has(image.id) ? "ring-3 ring-bf-rosegold-flat" : ""
                 }`}
               >
-                <Image
-                  src={getThumbnailUrl(image.storage_path, 300, 75)}
-                  alt={image.filename}
-                  fill
-                  sizes="150px"
-                  className="object-cover"
-                />
+                <div className="relative aspect-square rounded-lg bg-bf-cream overflow-hidden">
+                  <Image
+                    src={getThumbnailUrl(image.thumbnail_path || image.storage_path, 300, 75)}
+                    alt={image.filename}
+                    fill
+                    sizes="(max-width: 640px) 50vw, 300px"
+                    className="object-cover"
+                  />
+                </div>
                 {selected.has(image.id) && (
                   <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-rosegold flex items-center justify-center">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
