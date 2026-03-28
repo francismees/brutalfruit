@@ -100,6 +100,18 @@ CREATE POLICY "Photographers can upload to assigned albums"
     )
   );
 
+-- Photographers can view images in albums they are assigned to
+DROP POLICY IF EXISTS "Photographers can view assigned album images" ON images;
+CREATE POLICY "Photographers can view assigned album images"
+  ON images FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM album_photographers
+      WHERE album_photographers.album_id = images.album_id
+      AND album_photographers.photographer_id = auth.uid()
+    )
+  );
+
 DROP POLICY IF EXISTS "Admins can do everything with images" ON images;
 CREATE POLICY "Admins can do everything with images"
   ON images FOR ALL
@@ -131,6 +143,24 @@ DROP POLICY IF EXISTS "Photographers can view own assignments" ON album_photogra
 CREATE POLICY "Photographers can view own assignments"
   ON album_photographers FOR SELECT
   USING (photographer_id = auth.uid());
+
+-- Photographers can read albums they are assigned to (even unpublished)
+DROP POLICY IF EXISTS "Photographers can view assigned albums" ON albums;
+CREATE POLICY "Photographers can view assigned albums"
+  ON albums FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM album_photographers
+      WHERE album_photographers.album_id = albums.id
+      AND album_photographers.photographer_id = auth.uid()
+    )
+  );
+
+-- Photographers can view their own profile
+DROP POLICY IF EXISTS "Photographers can view own profile" ON photographers;
+CREATE POLICY "Photographers can view own profile"
+  ON photographers FOR SELECT
+  USING (id = auth.uid());
 
 -- ============================================
 -- Updated_at trigger
