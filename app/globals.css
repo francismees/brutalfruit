@@ -1,0 +1,251 @@
+@import "tailwindcss";
+
+/* ─── Design Tokens ─── */
+:root {
+  /* Rose Gold Gradient (Primary) */
+  --bf-rosegold-start: #DFC481;
+  --bf-rosegold-end: #E28D70;
+  --bf-rosegold: linear-gradient(135deg, #DFC481 0%, #E28D70 100%);
+  --bf-rosegold-hover: linear-gradient(135deg, #D4B56E 0%, #D47A5C 100%);
+  --bf-rosegold-flat: #D9A878;
+
+  /* Secondary — Ruby/Rose */
+  --bf-ruby: #BA3E4D;
+  --bf-ruby-dark: #6B1D28;
+  --bf-ruby-light: #E8A3AC;
+
+  /* Neutrals */
+  --bf-black: #262627;
+  --bf-gray-700: #4A4A4B;
+  --bf-gray-400: #9B9B9C;
+  --bf-gray-200: #D4D4D5;
+  --bf-cream: #FAF7F2;
+  --bf-blush: #FDF8F4;
+  --bf-white: #FFFFFF;
+
+  /* Surfaces */
+  --bf-bg-page: #FDF8F4;
+  --bf-bg-card: #FFFFFF;
+  --bf-bg-overlay: rgba(38, 38, 39, 0.90);
+  --bf-bg-sidebar: #FAFAFA;
+
+  /* Text */
+  --bf-text-primary: #262627;
+  --bf-text-secondary: #4A4A4B;
+  --bf-text-muted: #9B9B9C;
+}
+
+/* ─── Tailwind v4 Theme Extension ─── */
+@theme inline {
+  /* Colors */
+  --color-bf-rosegold-start: #DFC481;
+  --color-bf-rosegold-end: #E28D70;
+  --color-bf-rosegold-flat: #D9A878;
+  --color-bf-ruby: #BA3E4D;
+  --color-bf-ruby-dark: #6B1D28;
+  --color-bf-ruby-light: #E8A3AC;
+  --color-bf-black: #262627;
+  --color-bf-gray-700: #4A4A4B;
+  --color-bf-gray-400: #9B9B9C;
+  --color-bf-gray-200: #D4D4D5;
+  --color-bf-cream: #FAF7F2;
+  --color-bf-blush: #FDF8F4;
+  --color-bf-white: #FFFFFF;
+  --color-bf-overlay: rgba(38, 38, 39, 0.90);
+
+  /* Fonts */
+  --font-display: var(--font-gt-super-display), "Georgia", serif;
+  --font-serif: var(--font-gt-super-text), "Georgia", serif;
+  --font-sans: var(--font-inter), "Helvetica Neue", "Arial", sans-serif;
+}
+
+/* ─── Base Styles ─── */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--bf-bg-page);
+  color: var(--bf-text-primary);
+  font-family: var(--font-serif);
+  line-height: 1.6;
+}
+
+/* ─── Typography Utilities ─── */
+.heading-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.heading-display-italic {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.text-editorial {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.label-ui {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ─── Rose Gold Gradient Utilities ─── */
+.bg-rosegold {
+  background: var(--bf-rosegold);
+}
+
+.bg-rosegold-hover:hover {
+  background: var(--bf-rosegold-hover);
+}
+
+.text-rosegold {
+  background: var(--bf-rosegold);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Component Base Styles ─── */
+.btn-gradient {
+  background: var(--bf-rosegold);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  padding: 0.875rem 2rem;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+}
+
+.btn-gradient:hover {
+  background: var(--bf-rosegold-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(223, 196, 129, 0.35);
+}
+
+.btn-gradient:active {
+  transform: translateY(0);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--bf-text-secondary);
+  border: 1.5px solid var(--bf-gray-200);
+  border-radius: 999px;
+  padding: 0.875rem 2rem;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+}
+
+.btn-outline:hover {
+  border-color: var(--bf-gray-400);
+  color: var(--bf-text-primary);
+}
+
+.btn-ruby {
+  background: var(--bf-ruby);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.625rem 1.25rem;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-ruby:hover {
+  background: var(--bf-ruby-dark);
+}
+
+/* ─── Skeleton Shimmer ─── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bf-cream) 25%,
+    #F0EDE6 37%,
+    var(--bf-cream) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ─── Fade In Animation ─── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+/* ─── Scrollbar Styling ─── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bf-cream);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bf-gray-200);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--bf-gray-400);
+}
