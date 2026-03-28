@@ -55,7 +55,7 @@ export default function GalleryPage() {
       </header>
 
       {/* Gallery header */}
-      <section className="px-6 md:px-8 pt-8 pb-6">
+      <section className="px-6 md:px-8 pt-8 pb-6 flex flex-col items-center text-center">
         <h1 className="heading-display-italic text-3xl md:text-5xl mb-3">
           {album ? album.name : "The Gallery"}
         </h1>
