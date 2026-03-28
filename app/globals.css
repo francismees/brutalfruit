@@ -2,12 +2,12 @@
 
 /* ─── Design Tokens ─── */
 :root {
-  /* Rose Gold Gradient (Primary) */
-  --bf-rosegold-start: #DFC481;
-  --bf-rosegold-end: #E28D70;
-  --bf-rosegold: linear-gradient(135deg, #DFC481 0%, #E28D70 100%);
-  --bf-rosegold-hover: linear-gradient(135deg, #D4B56E 0%, #D47A5C 100%);
-  --bf-rosegold-flat: #D9A878;
+  /* Vibrant Pink Gradient (Primary) */
+  --bf-rosegold-start: #FF9EBC;
+  --bf-rosegold-end: #F2688E;
+  --bf-rosegold: linear-gradient(135deg, #FF9EBC 0%, #F2688E 100%);
+  --bf-rosegold-hover: linear-gradient(135deg, #F2688E 0%, #D04E72 100%);
+  --bf-rosegold-flat: #F2688E;
 
   /* Secondary — Ruby/Rose */
   --bf-ruby: #BA3E4D;
@@ -38,9 +38,9 @@
 /* ─── Tailwind v4 Theme Extension ─── */
 @theme inline {
   /* Colors */
-  --color-bf-rosegold-start: #DFC481;
-  --color-bf-rosegold-end: #E28D70;
-  --color-bf-rosegold-flat: #D9A878;
+  --color-bf-rosegold-start: #FF9EBC;
+  --color-bf-rosegold-end: #F2688E;
+  --color-bf-rosegold-flat: #F2688E;
   --color-bf-ruby: #BA3E4D;
   --color-bf-ruby-dark: #6B1D28;
   --color-bf-ruby-light: #E8A3AC;

@@ -21,13 +21,21 @@ export function AgeGate() {
     <div className="fixed inset-0 z-[100] bg-bf-blush flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-md text-center animate-fade-in-up">
         {/* Logo */}
-        <div className="mb-3">
-          <h1
-            className="heading-display-italic text-3xl md:text-4xl"
-            style={{ color: "var(--bf-rosegold-start)" }}
-          >
-            Brutal Fruit
-          </h1>
+        <div className="mb-6 flex justify-center">
+          <div 
+            className="w-48 h-8 bg-rosegold" 
+            style={{ 
+              WebkitMaskImage: 'url(/bf-logo-wordmark.svg)', 
+              WebkitMaskSize: 'contain', 
+              WebkitMaskRepeat: 'no-repeat', 
+              WebkitMaskPosition: 'center',
+              maskImage: 'url(/bf-logo-wordmark.svg)',
+              maskSize: 'contain',
+              maskRepeat: 'no-repeat',
+              maskPosition: 'center',
+            }} 
+            title="Brutal Fruit"
+          />
         </div>
 
         {/* Divider */}
