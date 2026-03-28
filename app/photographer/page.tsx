@@ -96,6 +96,19 @@ export default function PhotographerPage() {
     }
   };
 
+  const handleDelete = async (imageId: string, storagePath: string) => {
+    if (!confirm("Are you sure you want to delete this image?")) return;
+    const supabase = createClient();
+    
+    // Attempt storage deletion
+    await supabase.storage.from("event-photos").remove([storagePath]);
+    
+    // Database deletion
+    await supabase.from("images").delete().eq("id", imageId);
+    
+    fetchRecentImages();
+  };
+
   const pendingFiles = files.filter((f) => f.status === "pending" || f.status === "uploading");
 
   return (
@@ -232,7 +245,7 @@ export default function PhotographerPage() {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {recentImages.map((image) => (
-                <div key={image.id} className="group">
+                <div key={image.id} className="group relative">
                   <div className="relative aspect-square rounded-lg overflow-hidden bg-bf-cream">
                     <Image
                       src={getThumbnailUrl(image.storage_path, 300, 75)}
@@ -242,6 +255,15 @@ export default function PhotographerPage() {
                       className="object-cover"
                     />
                   </div>
+                  <button
+                    onClick={() => handleDelete(image.id, image.storage_path)}
+                    className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    title="Delete image"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
                   <p className="text-xs font-sans truncate mt-1.5 text-bf-text-secondary">
                     {image.filename}
                   </p>

@@ -142,3 +142,42 @@ CREATE TRIGGER albums_updated_at
   BEFORE UPDATE ON albums
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at();
+
+-- ============================================
+-- Photographers Delete Policy
+-- ============================================
+DROP POLICY IF EXISTS "Photographers can delete own images" ON images;
+CREATE POLICY "Photographers can delete own images"
+  ON images FOR DELETE
+  USING (uploaded_by = auth.uid());
+
+-- ============================================
+-- Storage Policies (bucket_id: 'event-photos')
+-- ============================================
+
+-- Allow public read access to the bucket
+DROP POLICY IF EXISTS "Public can view event photos" ON storage.objects;
+CREATE POLICY "Public can view event photos"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'event-photos');
+
+-- Allow authenticated users (photographers/admins) to upload
+DROP POLICY IF EXISTS "Authenticated can upload event photos" ON storage.objects;
+CREATE POLICY "Authenticated can upload event photos"
+  ON storage.objects FOR INSERT
+  TO authenticated
+  WITH CHECK (bucket_id = 'event-photos');
+
+-- Allow photographers/admins to delete their own uploaded files
+DROP POLICY IF EXISTS "Users can delete own event photos" ON storage.objects;
+CREATE POLICY "Users can delete own event photos"
+  ON storage.objects FOR DELETE
+  TO authenticated
+  USING (bucket_id = 'event-photos' AND auth.uid() = owner);
+
+-- Allow admins full control over the bucket
+DROP POLICY IF EXISTS "Admins have full control of event photos" ON storage.objects;
+CREATE POLICY "Admins have full control of event photos"
+  ON storage.objects FOR ALL
+  TO authenticated
+  USING (bucket_id = 'event-photos' AND (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
