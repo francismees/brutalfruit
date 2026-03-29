@@ -3,7 +3,9 @@
 import { useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
-export function AnalyticsTracker({ albumId }: { albumId?: string }) {
+import { Suspense } from 'react';
+
+function TrackingLogic({ albumId }: { albumId?: string }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -38,6 +40,14 @@ export function AnalyticsTracker({ albumId }: { albumId?: string }) {
   }, [pathname, searchParams, albumId]);
 
   return null;
+}
+
+export function AnalyticsTracker({ albumId }: { albumId?: string }) {
+  return (
+    <Suspense fallback={null}>
+      <TrackingLogic albumId={albumId} />
+    </Suspense>
+  );
 }
 
 function getDeviceType(): string {
