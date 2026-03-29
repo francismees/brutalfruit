@@ -781,6 +781,28 @@ export default function StudioPage() {
           </div>
         </div>
       </Modal>
+      {/* ─── Confirmation Modals ─── */}
+      <ConfirmModal
+        isOpen={!!albumToDelete}
+        onClose={() => setAlbumToDelete(null)}
+        onConfirm={executeAlbumDelete}
+        title="Delete Album"
+        message="Are you sure you want to delete this album and all its images? This action cannot be undone."
+        confirmText="Delete Album"
+      />
+
+      <ConfirmModal
+        isOpen={!!photographerToDelete}
+        onClose={() => setPhotographerToDelete(null)}
+        onConfirm={executePhotographerDelete}
+        title="Remove Photographer"
+        message={
+          photographerToDelete
+            ? `Are you sure you want to remove ${photographerToDelete.display_name}? This will revoke their access and re-assign all their uploads to you.`
+            : ""
+        }
+        confirmText="Remove Photographer"
+      />
     </div>
   );
 }
