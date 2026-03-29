@@ -64,16 +64,18 @@ export function useUpload({ albumId, onComplete }: UseUploadOptions): UseUploadR
     const manager = new UploadQueueManager(albumId, session.access_token, {
       onQueueUpdate: (updatedItems) => {
         setItems(updatedItems);
-        const hasActive = updatedItems.some(
-          (i) => i.status === "queued" || i.status === "uploading" || i.status === "retrying"
-        );
-        setIsUploading(hasActive);
-
+        // We DO NOT aggressively set isUploading here based on 'queued' items anymore,
+        // because that instantly hides the "START UPLOAD" button. This was the cause of the UI freeze.
         const total = updatedItems.length;
         const completed = updatedItems.filter((i) => i.status === "complete").length;
         const failed = updatedItems.filter((i) => i.status === "failed").length;
         const cancelled = updatedItems.filter((i) => i.status === "cancelled").length;
         setProgress({ completed, total, failed, cancelled });
+        
+        // Safety net: if everything is drained but onQueueComplete missed it
+        if (total > 0 && total === completed + failed + cancelled) {
+          setIsUploading(false);
+        }
       },
       onConnectionQuality: (quality) => {
         setConnectionQuality(quality);
@@ -121,6 +123,7 @@ export function useUpload({ albumId, onComplete }: UseUploadOptions): UseUploadR
   const resumeAll = useCallback(() => {
     managerRef.current?.resume();
     setIsPaused(false);
+    setIsUploading(true);
   }, []);
 
   const cancelRemaining = useCallback(() => {
@@ -133,10 +136,14 @@ export function useUpload({ albumId, onComplete }: UseUploadOptions): UseUploadR
 
   const retryItem = useCallback((itemId: string) => {
     managerRef.current?.retryItem(itemId);
+    setIsUploading(true);
+    setIsPaused(false);
   }, []);
 
   const retryAllFailed = useCallback(() => {
     managerRef.current?.retryAllFailed();
+    setIsUploading(true);
+    setIsPaused(false);
   }, []);
 
   const clearCompleted = useCallback(() => {
