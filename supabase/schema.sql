@@ -72,7 +72,7 @@ DROP POLICY IF EXISTS "Admins can do everything with albums" ON albums;
 CREATE POLICY "Admins can do everything with albums"
   ON albums FOR ALL
   USING (
-    (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+    (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
   );
 
 -- Photographers can update albums they are assigned to (e.g. to set cover image)
@@ -154,7 +154,7 @@ DROP POLICY IF EXISTS "Admins can do everything with images" ON images;
 CREATE POLICY "Admins can do everything with images"
   ON images FOR ALL
   USING (
-    (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+    (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
   );
 
 -- Photographers
@@ -164,7 +164,7 @@ DROP POLICY IF EXISTS "Admins can manage photographers" ON photographers;
 CREATE POLICY "Admins can manage photographers"
   ON photographers FOR ALL
   USING (
-    (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+    (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
   );
 
 -- Album Photographers
@@ -174,7 +174,7 @@ DROP POLICY IF EXISTS "Admins can manage assignments" ON album_photographers;
 CREATE POLICY "Admins can manage assignments"
   ON album_photographers FOR ALL
   USING (
-    (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+    (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
   );
 
 DROP POLICY IF EXISTS "Photographers can view own assignments" ON album_photographers;
@@ -271,4 +271,4 @@ DROP POLICY IF EXISTS "Admins have full control of event photos" ON storage.obje
 CREATE POLICY "Admins have full control of event photos"
   ON storage.objects FOR ALL
   TO authenticated
-  USING (bucket_id = 'event-photos' AND (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin');
+  USING (bucket_id = 'event-photos' AND (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');

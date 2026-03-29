@@ -4,6 +4,7 @@ import { useEffect, useCallback, useState } from "react";
 import Image from "next/image";
 import { getThumbnailUrl, getPublicUrl } from "@/lib/image-loader";
 import type { GalleryImage } from "@/types";
+import { useTrackImageEvent } from "@/hooks/useTrackImageEvent";
 
 interface LightboxProps {
   images: GalleryImage[];
@@ -75,10 +76,14 @@ export function Lightbox({
     setTouchStart(null);
   };
 
+  const track = useTrackImageEvent();
+
   const handleDownload = async () => {
     const image = images[currentIndex];
     if (!image) return;
 
+    track(image.id, image.album_id, 'download');
+    
     setIsDownloading(true);
     try {
       const response = await fetch(`/api/download?path=${encodeURIComponent(image.storage_path)}&filename=${encodeURIComponent(image.filename)}`);

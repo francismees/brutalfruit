@@ -37,11 +37,11 @@ async function elevate() {
   }
 
   for (const u of users) {
-    if (u.user_metadata?.role === 'admin') continue;
+    if (u.app_metadata?.role === 'admin') continue;
     
     // Elevate role to admin
     const { error: updateError } = await supabase.auth.admin.updateUserById(u.id, {
-      user_metadata: { ...u.user_metadata, role: "admin" }
+      app_metadata: { ...u.app_metadata, role: "admin" }
     });
     
     if (updateError) {

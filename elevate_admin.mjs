@@ -25,7 +25,7 @@ async function elevate() {
 
   for (const u of users) {
     const { error: updateError } = await supabase.auth.admin.updateUserById(u.id, {
-      user_metadata: { ...u.user_metadata, role: "admin" }
+      app_metadata: { ...u.app_metadata, role: "admin" }
     });
     if (updateError) {
       console.error(`Failed to promote ${u.email}:`, updateError);

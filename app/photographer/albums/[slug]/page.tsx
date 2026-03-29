@@ -39,7 +39,7 @@ export default function AlbumManagementPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     setCurrentUser(user);
-    setIsAdmin(user.user_metadata?.role === "admin");
+    setIsAdmin(user.app_metadata?.role === "admin");
 
     // Album Data
     const { data: albumData } = await supabase

@@ -1,14 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import Link from "next/link";
-
-const photographerNav = [
-  { href: "/photographer", label: "Upload Center", icon: "upload" },
-  { href: "/photographer/albums", label: "Photo Albums", icon: "albums" },
-];
+import { Sidebar } from "@/components/dashboard/Sidebar";
 
 export default function PhotographerLayout({
   children,
@@ -17,8 +12,8 @@ export default function PhotographerLayout({
 }) {
   const [isAuthed, setIsAuthed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [userRole, setUserRole] = useState<"admin" | "photographer">("photographer");
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     async function checkAuth() {
@@ -28,6 +23,10 @@ export default function PhotographerLayout({
         router.push("/login");
       } else {
         setIsAuthed(true);
+        // Admins accessing photographer pages should keep the admin sidebar
+        if (user.app_metadata?.role === "admin") {
+          setUserRole("admin");
+        }
       }
       setIsLoading(false);
     }
@@ -46,65 +45,8 @@ export default function PhotographerLayout({
 
   return (
     <div className="min-h-screen bg-bf-cream flex">
-      {/* Sidebar — desktop only */}
-      <aside className="hidden lg:flex flex-col w-60 bg-white border-r border-bf-gray-200 p-5">
-        <div className="mb-10">
-          <div 
-            className="w-32 h-5 bg-rosegold" 
-            style={{ 
-              WebkitMaskImage: 'url(/bf-logo-wordmark.svg)', 
-              WebkitMaskSize: 'contain', 
-              WebkitMaskRepeat: 'no-repeat', 
-              WebkitMaskPosition: 'left center',
-              maskImage: 'url(/bf-logo-wordmark.svg)',
-              maskSize: 'contain',
-              maskRepeat: 'no-repeat',
-              maskPosition: 'left center',
-            }} 
-            title="Brutal Fruit"
-          />
-        </div>
-
-        <nav className="flex-1 space-y-1">
-          {photographerNav.map((item) => {
-            const isActive = 
-              item.href === "/photographer" 
-                ? pathname === "/photographer" 
-                : pathname.startsWith(item.href);
-            
-            return (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-sans transition-colors ${
-                  isActive
-                    ? "bg-bf-cream text-bf-black font-medium"
-                    : "text-bf-gray-400 hover:text-bf-black hover:bg-bf-cream/50"
-                }`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <button
-          onClick={async () => {
-            const supabase = createClient();
-            await supabase.auth.signOut();
-            router.push("/login");
-          }}
-          className="flex items-center gap-2 px-3 py-2 text-sm text-bf-gray-400 font-sans hover:text-bf-black transition-colors"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          LOGOUT
-        </button>
-      </aside>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col">
+      <Sidebar role={userRole} />
+      <div className="flex-1 flex flex-col overflow-y-auto">
         {children}
       </div>
     </div>

@@ -2,6 +2,6 @@
 
 import { UploadPage } from "@/components/dashboard/UploadPage";
 
-export default function PhotographerUploadsPage() {
+export default function AdminUploadsPage() {
   return <UploadPage />;
 }

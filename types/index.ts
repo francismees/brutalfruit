@@ -45,6 +45,7 @@ export interface AlbumWithCount extends Album {
   image_count: number;
 }
 
+/** @deprecated Use QueueItem instead */
 export interface UploadFile {
   id: string;
   file: File;
@@ -55,5 +56,24 @@ export interface UploadFile {
   error?: string;
   previewUrl?: string;
 }
+
+export type UploadStatus = 'queued' | 'uploading' | 'complete' | 'failed' | 'retrying' | 'cancelled';
+
+export interface QueueItem {
+  id: string;
+  file: File;
+  name: string;
+  size: number;
+  status: UploadStatus;
+  progress: number;       // 0-100, real TUS progress
+  retryCount: number;     // 0 to MAX_RETRY_COUNT
+  error?: string;
+  previewUrl?: string;
+  storagePath?: string;   // set once upload begins
+  width?: number | null;
+  height?: number | null;
+}
+
+export type ConnectionQuality = 'testing' | 'fast' | 'moderate' | 'slow';
 
 export type UserRole = 'admin' | 'photographer' | 'public';

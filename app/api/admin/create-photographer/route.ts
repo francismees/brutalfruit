@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
       email: syntheticEmail,
       password,
       email_confirm: true,
-      user_metadata: { role: "photographer", username },
+      app_metadata: { role: "photographer" },
+      user_metadata: { username },
     });
 
     if (authError) {

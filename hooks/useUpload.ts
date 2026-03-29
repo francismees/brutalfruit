@@ -1,191 +1,164 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { STORAGE_BUCKET, MAX_CONCURRENT_UPLOADS, MAX_FILE_SIZE } from "@/lib/constants";
-import { generateClientThumbnail } from "@/lib/image-utils";
-import type { UploadFile } from "@/types";
+import { UploadQueueManager } from "@/lib/upload/upload-queue";
+import type { QueueItem, ConnectionQuality } from "@/types";
 
 interface UseUploadOptions {
   albumId: string;
   onComplete?: () => void;
 }
 
-export function useUpload({ albumId, onComplete }: UseUploadOptions) {
-  const [files, setFiles] = useState<UploadFile[]>([]);
+interface UseUploadReturn {
+  /** Current queue items */
+  items: QueueItem[];
+  /** Whether any uploads are active or queued */
+  isUploading: boolean;
+  /** Whether the queue is paused */
+  isPaused: boolean;
+  /** Detected connection quality */
+  connectionQuality: ConnectionQuality;
+  /** Overall progress { completed, total, failed, cancelled } */
+  progress: { completed: number; total: number; failed: number; cancelled: number };
+  /** Add files to the queue */
+  addFiles: (files: FileList | File[]) => void;
+  /** Start processing the queue */
+  startUpload: () => void;
+  /** Pause all active uploads */
+  pauseAll: () => void;
+  /** Resume from pause */
+  resumeAll: () => void;
+  /** Cancel all remaining queued items */
+  cancelRemaining: () => void;
+  /** Cancel a specific item */
+  cancelItem: (itemId: string) => void;
+  /** Retry a specific failed item */
+  retryItem: (itemId: string) => void;
+  /** Retry all failed items */
+  retryAllFailed: () => void;
+  /** Clear completed/failed/cancelled items from the list */
+  clearCompleted: () => void;
+}
+
+export function useUpload({ albumId, onComplete }: UseUploadOptions): UseUploadReturn {
+  const [items, setItems] = useState<QueueItem[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const activeUploads = useRef(0);
-  const queueRef = useRef<UploadFile[]>([]);
+  const [isPaused, setIsPaused] = useState(false);
+  const [connectionQuality, setConnectionQuality] = useState<ConnectionQuality>("testing");
+  const [progress, setProgress] = useState({ completed: 0, total: 0, failed: 0, cancelled: 0 });
 
-  const addFiles = useCallback((newFiles: FileList | File[]) => {
-    const fileArray = Array.from(newFiles);
-    const uploadFiles: UploadFile[] = fileArray
-      .filter((f) => f.size <= MAX_FILE_SIZE)
-      .map((file) => {
-        const sanitizedFilename = file.name
-          .replace(/[^\w\s.-]/g, "")
-          .replace(/\s+/g, "-")
-          .toLowerCase();
+  const managerRef = useRef<UploadQueueManager | null>(null);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
-        return {
-          id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-          file,
-          name: sanitizedFilename,
-          size: file.size,
-          progress: 0,
-          status: "pending" as const,
-          previewUrl: file.type.startsWith("image/")
-            ? URL.createObjectURL(file)
-            : undefined,
-        };
-      });
-
-    setFiles((prev) => [...prev, ...uploadFiles]);
-    queueRef.current = [...queueRef.current, ...uploadFiles];
-  }, []);
-
-  const uploadNext = useCallback(async () => {
-    if (activeUploads.current >= MAX_CONCURRENT_UPLOADS) return;
-    const next = queueRef.current.find((f) => f.status === "pending");
-    if (!next) {
-      if (activeUploads.current === 0) {
-        setIsUploading(false);
-        onComplete?.();
-      }
-      return;
-    }
-
-    activeUploads.current++;
-    
-    // MUTATE SYNCHRONOUSLY BEFORE ANY AWAIT 
-    // to prevent the for-loop from spawning duplicate threads on the same target file.
-    next.status = "uploading";
-    
-    // Simulate progress tick
-    let currentProgress = 5;
-    const progressTicker = setInterval(() => {
-      currentProgress = Math.min(currentProgress + Math.random() * 15, 95);
-      setFiles((prev) =>
-        prev.map((f) => (f.id === next.id ? { ...f, status: "uploading" as const, progress: Math.round(currentProgress) } : f))
-      );
-    }, 800);
+  // Get or lazily create the queue manager
+  const getManager = useCallback(async (): Promise<UploadQueueManager | null> => {
+    if (managerRef.current) return managerRef.current;
+    if (!albumId) return null;
 
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    const storagePath = `${albumId}/${Date.now()}-${next.name}`;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return null;
 
-    try {
-      // Create and Upload Thumbnail (Fire and Forget or parallel)
-      let thumbStoragePath: string | null = null;
-      try {
-        const thumbnailBlob = await generateClientThumbnail(next.file, 800);
-        if (thumbnailBlob) {
-          const nameWithoutExt = next.name.substring(0, next.name.lastIndexOf('.')) || next.name;
-          thumbStoragePath = `${albumId}/thumb-${Date.now()}-${nameWithoutExt}.webp`;
-          
-          await supabase.storage
-            .from(STORAGE_BUCKET)
-            .upload(thumbStoragePath, thumbnailBlob, {
-              cacheControl: "3600",
-              upsert: false,
-            });
-        }
-      } catch (err) {
-        console.warn("Could not handle thumbnail processing:", err);
-      }
+    const manager = new UploadQueueManager(albumId, session.access_token, {
+      onQueueUpdate: (updatedItems) => {
+        setItems(updatedItems);
+        const hasActive = updatedItems.some(
+          (i) => i.status === "queued" || i.status === "uploading" || i.status === "retrying"
+        );
+        setIsUploading(hasActive);
 
-      // Upload Original to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from(STORAGE_BUCKET)
-        .upload(storagePath, next.file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
+        const total = updatedItems.length;
+        const completed = updatedItems.filter((i) => i.status === "complete").length;
+        const failed = updatedItems.filter((i) => i.status === "failed").length;
+        const cancelled = updatedItems.filter((i) => i.status === "cancelled").length;
+        setProgress({ completed, total, failed, cancelled });
+      },
+      onConnectionQuality: (quality) => {
+        setConnectionQuality(quality);
+      },
+      onQueueComplete: () => {
+        setIsUploading(false);
+        onCompleteRef.current?.();
+      },
+    });
 
-      if (uploadError) throw uploadError;
+    managerRef.current = manager;
+    return manager;
+  }, [albumId]);
 
-      // Extract dimensions
-      let width: number | null = null;
-      let height: number | null = null;
-      if (next.file.type.startsWith("image/")) {
-        try {
-          const bitmap = await createImageBitmap(next.file);
-          width = bitmap.width;
-          height = bitmap.height;
-          bitmap.close();
-        } catch {
-          // Non-standard image (RAW), skip dimension extraction
-        }
-      }
+  // Cleanup on unmount or albumId change
+  useEffect(() => {
+    return () => {
+      managerRef.current?.destroy();
+      managerRef.current = null;
+    };
+  }, [albumId]);
 
-      // Insert metadata into images table
-      const { error: dbError } = await supabase.from("images").insert({
-        album_id: albumId,
-        storage_path: storagePath,
-        thumbnail_path: thumbStoragePath,
-        filename: next.name,
-        file_size: next.file.size,
-        width,
-        height,
-        uploaded_by: user?.id,
-      });
+  const addFiles = useCallback(
+    async (newFiles: FileList | File[]) => {
+      const manager = await getManager();
+      if (!manager) return;
+      manager.addFiles(Array.from(newFiles));
+    },
+    [getManager]
+  );
 
-      if (dbError) throw dbError;
-
-      // Mark complete
-      setFiles((prev) =>
-        prev.map((f) =>
-          f.id === next.id ? { ...f, progress: 100, status: "complete" as const } : f
-        )
-      );
-    } catch (err) {
-      console.error("Upload failed for", next.name, err);
-      setFiles((prev) =>
-        prev.map((f) =>
-          f.id === next.id
-            ? { ...f, status: "error" as const, error: (err as Error).message }
-            : f
-        )
-      );
-    } finally {
-      clearInterval(progressTicker);
-      activeUploads.current--;
-      uploadNext();
-    }
-  }, [albumId, onComplete]);
-
-  const startUpload = useCallback(() => {
+  const startUpload = useCallback(async () => {
+    const manager = await getManager();
+    if (!manager) return;
     setIsUploading(true);
-    // Start up to MAX_CONCURRENT_UPLOADS
-    for (let i = 0; i < MAX_CONCURRENT_UPLOADS; i++) {
-      uploadNext();
-    }
-  }, [uploadNext]);
+    setIsPaused(false);
+    manager.start();
+  }, [getManager]);
 
-  const cancelAll = useCallback(() => {
-    queueRef.current = [];
-    setFiles((prev) =>
-      prev.map((f) =>
-        f.status === "pending" ? { ...f, status: "error" as const, error: "Cancelled" } : f
-      )
-    );
-    setIsUploading(false);
+  const pauseAll = useCallback(() => {
+    managerRef.current?.pause();
+    setIsPaused(true);
+  }, []);
+
+  const resumeAll = useCallback(() => {
+    managerRef.current?.resume();
+    setIsPaused(false);
+  }, []);
+
+  const cancelRemaining = useCallback(() => {
+    managerRef.current?.cancelRemaining();
+  }, []);
+
+  const cancelItem = useCallback((itemId: string) => {
+    managerRef.current?.cancelItem(itemId);
+  }, []);
+
+  const retryItem = useCallback((itemId: string) => {
+    managerRef.current?.retryItem(itemId);
+  }, []);
+
+  const retryAllFailed = useCallback(() => {
+    managerRef.current?.retryAllFailed();
   }, []);
 
   const clearCompleted = useCallback(() => {
-    setFiles((prev) => prev.filter((f) => f.status !== "complete" && f.status !== "error"));
-    queueRef.current = queueRef.current.filter(
-      (f) => f.status !== "complete" && f.status !== "error"
+    setItems((prev) =>
+      prev.filter((i) => i.status !== "complete" && i.status !== "failed" && i.status !== "cancelled")
     );
   }, []);
 
   return {
-    files,
+    items,
     isUploading,
+    isPaused,
+    connectionQuality,
+    progress,
     addFiles,
     startUpload,
-    cancelAll,
+    pauseAll,
+    resumeAll,
+    cancelRemaining,
+    cancelItem,
+    retryItem,
+    retryAllFailed,
     clearCompleted,
   };
 }

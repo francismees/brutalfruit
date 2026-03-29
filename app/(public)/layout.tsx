@@ -1,6 +1,7 @@
 "use client";
 
 import { AgeGate } from "./components/AgeGate";
+import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
 
 export default function PublicLayout({
   children,
@@ -10,6 +11,7 @@ export default function PublicLayout({
   return (
     <>
       <AgeGate />
+      <AnalyticsTracker />
       {children}
     </>
   );

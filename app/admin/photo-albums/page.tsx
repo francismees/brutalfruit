@@ -2,6 +2,6 @@
 
 import { PhotoAlbumsPage } from "@/components/dashboard/PhotoAlbumsPage";
 
-export default function PhotographerAlbumsPage() {
+export default function AdminPhotoAlbumsPage() {
   return <PhotoAlbumsPage />;
 }

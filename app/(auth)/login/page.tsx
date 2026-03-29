@@ -34,7 +34,7 @@ export default function LoginPage() {
     }
 
     // Route based on role
-    const role = data.user?.user_metadata?.role;
+    const role = data.user?.app_metadata?.role;
     if (role === "admin") {
       router.push("/admin");
     } else {
