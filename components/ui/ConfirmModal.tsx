@@ -32,19 +32,16 @@ export function ConfirmModal({
           <Button variant="outline" onClick={onClose} className="flex-1">
             {cancelText}
           </Button>
-          <button
+          <Button
+            variant={isDestructive ? "ruby" : "gradient"}
             onClick={() => {
               onConfirm();
               onClose();
             }}
-            className={`flex-1 px-4 py-2 rounded-full font-sans font-bold text-sm tracking-wide transition-colors ${
-              isDestructive
-                ? "bg-bf-ruby text-white hover:bg-red-800"
-                : "bg-bf-black text-white hover:bg-gray-800"
-            }`}
+            className="flex-1"
           >
             {confirmText}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>
