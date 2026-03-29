@@ -7,6 +7,7 @@ import { ImageGrid } from "@/components/photographer/ImageGrid";
 import { ReorderGrid } from "@/components/photographer/ReorderGrid";
 import { ImageActionBar } from "@/components/photographer/SelectionBar";
 import { ImagePreviewModal } from "@/components/photographer/ImagePreviewModal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -31,6 +32,7 @@ export default function AlbumManagementPage() {
   const [filter, setFilter] = useState<"all" | "mine" | string>("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [previewImage, setPreviewImage] = useState<GalleryImage | null>(null);
+  const [isDeletingSelected, setIsDeletingSelected] = useState(false);
 
   const fetchData = useCallback(async () => {
     const supabase = createClient();
@@ -106,9 +108,11 @@ export default function AlbumManagementPage() {
     setSelectedIds(new Set());
   };
 
-  const handleDeleteSelected = async () => {
-    if (!confirm(`Are you sure you want to delete ${ownSelectedCount} selected image(s)?`)) return;
+  const handleDeleteSelected = () => {
+    setIsDeletingSelected(true);
+  };
 
+  const executeDeleteSelected = async () => {
     const supabase = createClient();
     const toDelete = images.filter(img => selectedIds.has(img.id));
     
@@ -130,6 +134,8 @@ export default function AlbumManagementPage() {
       setImages(prev => prev.filter(img => !toDelete.find(td => td.id === img.id)));
       setSelectedIds(new Set());
     }
+    
+    setIsDeletingSelected(false);
   };
 
   const handleDownloadSelected = async () => {
@@ -362,6 +368,15 @@ export default function AlbumManagementPage() {
         onSetCover={handleSetCover}
         currentUserId={currentUser?.id}
         isAdmin={isAdmin}
+      />
+
+      <ConfirmModal
+        isOpen={isDeletingSelected}
+        onClose={() => setIsDeletingSelected(false)}
+        onConfirm={executeDeleteSelected}
+        title="Delete Selected Images"
+        message={`Are you sure you want to permanently delete ${ownSelectedCount} selected image(s)? This action cannot be undone.`}
+        confirmText="Delete Images"
       />
     </div>
   );

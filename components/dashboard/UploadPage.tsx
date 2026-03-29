@@ -7,6 +7,7 @@ import { ACCEPTED_EXTENSIONS } from "@/lib/constants";
 import { formatFileSize } from "@/lib/utils";
 import { getThumbnailUrl } from "@/lib/image-loader";
 import { PageHeader } from "@/components/dashboard/PageHeader";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type { Album, GalleryImage, QueueItem } from "@/types";
 import Image from "next/image";
@@ -99,6 +100,7 @@ export function UploadPage() {
   const [selectedAlbumId, setSelectedAlbumId] = useState("");
   const [recentImages, setRecentImages] = useState<GalleryImage[]>([]);
   const [isLoadingAlbums, setIsLoadingAlbums] = useState(true);
+  const [imageToDelete, setImageToDelete] = useState<{ id: string; storagePath: string; thumbnailPath?: string | null } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -194,14 +196,20 @@ export function UploadPage() {
     }
   };
 
-  const handleDelete = async (imageId: string, storagePath: string, thumbnailPath?: string | null) => {
-    if (!confirm("Are you sure you want to delete this image?")) return;
-    const supabase = createClient();
+  const handleDeleteRequest = (imageId: string, storagePath: string, thumbnailPath?: string | null) => {
+    setImageToDelete({ id: imageId, storagePath, thumbnailPath });
+  };
 
+  const executeImageDelete = async () => {
+    if (!imageToDelete) return;
+    const { id, storagePath, thumbnailPath } = imageToDelete;
+    
+    const supabase = createClient();
     const pathsToDelete = [storagePath, thumbnailPath].filter(Boolean) as string[];
     await supabase.storage.from("event-photos").remove(pathsToDelete);
-    await supabase.from("images").delete().eq("id", imageId);
+    await supabase.from("images").delete().eq("id", id);
 
+    setImageToDelete(null);
     fetchRecentImages();
   };
 
@@ -489,7 +497,7 @@ export function UploadPage() {
                     />
                   </div>
                   <button
-                    onClick={() => handleDelete(image.id, image.storage_path, image.thumbnail_path)}
+                    onClick={() => handleDeleteRequest(image.id, image.storage_path, image.thumbnail_path)}
                     className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
                     title="Delete image"
                   >
@@ -509,6 +517,15 @@ export function UploadPage() {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={!!imageToDelete}
+        onClose={() => setImageToDelete(null)}
+        onConfirm={executeImageDelete}
+        title="Delete Image"
+        message="Are you sure you want to permanently delete this image from the cloud?"
+        confirmText="Delete Image"
+      />
     </div>
   );
 }

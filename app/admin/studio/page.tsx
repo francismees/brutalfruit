@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Toggle } from "@/components/ui/Toggle";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { slugify, formatDateShort } from "@/lib/utils";
 import Image from "next/image";
@@ -87,8 +88,10 @@ export default function StudioPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortMode, setSortMode] = useState<SortMode>("name");
 
-  // ─── Detail drawer ───
+  // ─── Detail drawer & Confirmations ───
   const [drawerPhotographer, setDrawerPhotographer] = useState<Photographer | null>(null);
+  const [albumToDelete, setAlbumToDelete] = useState<string | null>(null);
+  const [photographerToDelete, setPhotographerToDelete] = useState<Photographer | null>(null);
 
   // ─── Album map for quick lookup ───
   const albumMap = useMemo(() => {
@@ -218,10 +221,15 @@ export default function StudioPage() {
     fetchAlbums();
   };
 
-  const handleAlbumDelete = async (albumId: string) => {
-    if (!confirm("Delete this album and all its images?")) return;
+  const handleAlbumDelete = (albumId: string) => {
+    setAlbumToDelete(albumId);
+  };
+  
+  const executeAlbumDelete = async () => {
+    if (!albumToDelete) return;
     const supabase = createClient();
-    await supabase.from("albums").delete().eq("id", albumId);
+    await supabase.from("albums").delete().eq("id", albumToDelete);
+    setAlbumToDelete(null);
     fetchAlbums();
   };
 
@@ -304,14 +312,18 @@ export default function StudioPage() {
     fetchPhotographers();
   };
 
-  const deletePhotographer = async (photographer: Photographer) => {
-    if (!confirm(`Remove ${photographer.display_name}? This will revoke their access and remove all album assignments.`)) return;
+  const deletePhotographer = (photographer: Photographer) => {
+    setPhotographerToDelete(photographer);
+  };
+
+  const executePhotographerDelete = async () => {
+    if (!photographerToDelete) return;
     
     try {
       const res = await fetch("/api/admin/delete-photographer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: photographer.id }),
+        body: JSON.stringify({ id: photographerToDelete.id }),
       });
       
       if (!res.ok) {
@@ -321,6 +333,7 @@ export default function StudioPage() {
       }
       
       setDrawerPhotographer(null);
+      setPhotographerToDelete(null);
       fetchPhotographers();
     } catch {
       alert("Something went wrong deleting the photographer");
