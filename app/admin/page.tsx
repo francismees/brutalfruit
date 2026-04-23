@@ -74,9 +74,10 @@ export default function AdminDashboardPage() {
               <rect x="3" y="3" width="18" height="18" rx="2" />
               <circle cx="8.5" cy="8.5" r="1.5" />
               <path d="M21 15l-5-5L5 21" />
+              <polygon points="16 3 14 8 19 8" fill="currentColor" stroke="none" opacity="0.5"/>
             </svg>
           }
-          label="Total Images"
+          label="Total Media"
           value={totalImages.toLocaleString()}
         />
         <StatCard

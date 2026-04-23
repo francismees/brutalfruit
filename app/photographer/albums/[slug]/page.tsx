@@ -29,7 +29,7 @@ export default function AlbumManagementPage() {
   const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [hasUnsavedOrder, setHasUnsavedOrder] = useState(false);
   
-  const [filter, setFilter] = useState<"all" | "mine" | string>("all");
+  const [filter, setFilter] = useState<"all" | "images" | "videos" | "mine" | string>("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [previewImage, setPreviewImage] = useState<GalleryImage | null>(null);
   const [isDeletingSelected, setIsDeletingSelected] = useState(false);
@@ -85,6 +85,8 @@ export default function AlbumManagementPage() {
   const filteredImages = useMemo(() => {
     if (filter === "all") return images;
     if (filter === "mine") return images.filter(img => img.uploaded_by === currentUser?.id);
+    if (filter === "images") return images.filter(img => !img.media_type || img.media_type === "image");
+    if (filter === "videos") return images.filter(img => img.media_type === "video");
     return images.filter(img => img.uploaded_by === filter);
   }, [images, filter, currentUser]);
 
@@ -116,12 +118,13 @@ export default function AlbumManagementPage() {
     const supabase = createClient();
     const toDelete = images.filter(img => selectedIds.has(img.id));
     
-    // 1. Storage Deletion
+    // 1. Storage Deletion — remove main file, image thumbnail, AND video thumbnail
     const paths = toDelete.map(img => img.storage_path);
     const thumbPaths = toDelete.map(img => img.thumbnail_path).filter(Boolean) as string[];
+    const videoThumbPaths = toDelete.map(img => img.video_thumbnail_path).filter(Boolean) as string[];
     
     if (paths.length > 0) {
-      await supabase.storage.from("event-photos").remove([...paths, ...thumbPaths]);
+      await supabase.storage.from("event-photos").remove([...paths, ...thumbPaths, ...videoThumbPaths]);
     }
 
     // 2. Database Deletion
@@ -284,7 +287,23 @@ export default function AlbumManagementPage() {
                   filter === "all" ? "bg-bf-black text-white border-bf-black" : "bg-white text-bf-gray-400 border-bf-gray-200 hover:border-bf-gray-400"
                 }`}
               >
-                All Photos ({images.length})
+                All Media ({images.length})
+              </button>
+              <button 
+                onClick={() => setFilter("images")}
+                className={`px-4 py-2 rounded-full text-xs font-sans font-bold transition-all border ${
+                  filter === "images" ? "bg-bf-black text-white border-bf-black" : "bg-white text-bf-gray-400 border-bf-gray-200 hover:border-bf-gray-400"
+                }`}
+              >
+                Images ({images.filter(i => !i.media_type || i.media_type === "image").length})
+              </button>
+              <button 
+                onClick={() => setFilter("videos")}
+                className={`px-4 py-2 rounded-full text-xs font-sans font-bold transition-all border ${
+                  filter === "videos" ? "bg-bf-ruby text-white border-bf-ruby" : "bg-white text-bf-gray-400 border-bf-gray-200 hover:border-bf-ruby/50"
+                }`}
+              >
+                Videos ({images.filter(i => i.media_type === "video").length})
               </button>
               <button 
                 onClick={() => setFilter("mine")}

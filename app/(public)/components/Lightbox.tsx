@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import Image from "next/image";
 import { getThumbnailUrl, getPublicUrl } from "@/lib/image-loader";
 import type { GalleryImage } from "@/types";
@@ -23,10 +23,17 @@ export function Lightbox({
 }: LightboxProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     setCurrentIndex(initialIndex);
   }, [initialIndex]);
+
+  // Reset mute state when navigating between items
+  useEffect(() => {
+    setIsMuted(true);
+  }, [currentIndex]);
 
   useEffect(() => {
     if (isOpen) {
@@ -54,12 +61,13 @@ export function Lightbox({
       if (e.key === "Escape") onClose();
       if (e.key === "ArrowRight") goNext();
       if (e.key === "ArrowLeft") goPrev();
+      if (e.key === "m" || e.key === "M") setIsMuted((m) => !m);
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [isOpen, onClose, goNext, goPrev]);
 
-  // Touch swipe
+  // Touch swipe — only handled at the container level, not on the video element itself
   const [touchStart, setTouchStart] = useState<number | null>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -82,11 +90,13 @@ export function Lightbox({
     const image = images[currentIndex];
     if (!image) return;
 
-    track(image.id, image.album_id, 'download');
-    
+    track(image.id, image.album_id, "download");
+
     setIsDownloading(true);
     try {
-      const response = await fetch(`/api/download?path=${encodeURIComponent(image.storage_path)}&filename=${encodeURIComponent(image.filename)}`);
+      const response = await fetch(
+        `/api/download?path=${encodeURIComponent(image.storage_path)}&filename=${encodeURIComponent(image.filename)}`
+      );
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -105,8 +115,18 @@ export function Lightbox({
 
   if (!isOpen || !images[currentIndex]) return null;
 
-  const currentImage = images[currentIndex];
-  const swipeUrl = getThumbnailUrl(currentImage.storage_path, 1200, 85);
+  const currentItem = images[currentIndex];
+  const isVideo = currentItem.media_type === "video";
+
+  // Image: Supabase transform URL at 1200px. Video: direct public URL (no transform).
+  const swipeUrl = isVideo
+    ? getPublicUrl(currentItem.storage_path)
+    : getThumbnailUrl(currentItem.storage_path, 1200, 85);
+
+  const posterUrl =
+    isVideo && currentItem.video_thumbnail_path
+      ? getPublicUrl(currentItem.video_thumbnail_path)
+      : undefined;
 
   return (
     <div
@@ -122,18 +142,47 @@ export function Lightbox({
         <span className="text-white/80 font-sans text-sm tabular-nums">
           {currentIndex + 1} / {totalCount}
         </span>
-        <button
-          onClick={onClose}
-          className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-          id="lightbox-close"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
-          </svg>
-        </button>
+
+        <div className="flex items-center gap-3">
+          {/* Mute toggle — only for videos */}
+          {isVideo && (
+            <button
+              onClick={() => setIsMuted((m) => !m)}
+              className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+              id="lightbox-mute-toggle"
+              title={isMuted ? "Unmute" : "Mute"}
+            >
+              {isMuted ? (
+                // Speaker-muted icon
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <line x1="23" y1="9" x2="17" y2="15" strokeLinecap="round" />
+                  <line x1="17" y1="9" x2="23" y2="15" strokeLinecap="round" />
+                </svg>
+              ) : (
+                // Speaker-on icon
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M19.07 4.93a10 10 0 010 14.14" strokeLinecap="round" />
+                  <path d="M15.54 8.46a5 5 0 010 7.07" strokeLinecap="round" />
+                </svg>
+              )}
+            </button>
+          )}
+
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+            id="lightbox-close"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      {/* Image */}
+      {/* Media area */}
       <div className="relative z-10 flex-1 flex items-center justify-center px-4">
         {/* Prev arrow */}
         {currentIndex > 0 && (
@@ -147,16 +196,30 @@ export function Lightbox({
           </button>
         )}
 
-        <div className="relative w-full max-w-4xl aspect-[4/3] md:aspect-auto md:h-[70vh]">
-          <Image
-            key={currentImage.id}
-            src={swipeUrl}
-            alt={currentImage.filename}
-            fill
-            sizes="100vw"
-            className="object-contain"
-            priority
-          />
+        <div className="relative w-full max-w-4xl aspect-[4/3] md:aspect-auto md:h-[70vh] flex items-center justify-center">
+          {isVideo ? (
+            <video
+              key={currentItem.id}
+              ref={videoRef}
+              src={swipeUrl}
+              poster={posterUrl}
+              controls
+              autoPlay
+              muted={isMuted}
+              playsInline
+              className="max-w-full max-h-full object-contain rounded-lg"
+            />
+          ) : (
+            <Image
+              key={currentItem.id}
+              src={swipeUrl}
+              alt={currentItem.filename}
+              fill
+              sizes="100vw"
+              className="object-contain"
+              priority
+            />
+          )}
         </div>
 
         {/* Next arrow */}
@@ -183,7 +246,11 @@ export function Lightbox({
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 3v13m0 0l-4-4m4 4l4-4M5 19h14" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          {isDownloading ? "DOWNLOADING..." : "DOWNLOAD IMAGE"}
+          {isDownloading
+            ? "DOWNLOADING..."
+            : isVideo
+            ? "DOWNLOAD VIDEO"
+            : "DOWNLOAD IMAGE"}
         </button>
       </div>
     </div>

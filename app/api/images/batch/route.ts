@@ -8,6 +8,9 @@ interface BatchImageInput {
   file_size: number | null;
   width: number | null;
   height: number | null;
+  media_type?: 'image' | 'video';
+  duration?: number | null;
+  video_thumbnail_path?: string | null;
 }
 
 export async function POST(request: NextRequest) {
@@ -58,6 +61,9 @@ export async function POST(request: NextRequest) {
       file_size: img.file_size,
       width: img.width,
       height: img.height,
+      media_type: img.media_type ?? 'image',
+      duration: img.duration ?? null,
+      video_thumbnail_path: img.video_thumbnail_path ?? null,
       uploaded_by: user.id,
     }));
 

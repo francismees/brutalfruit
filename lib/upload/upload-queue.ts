@@ -2,14 +2,16 @@
  * Upload Queue Manager
  *
  * Manages a queue of file uploads with:
- * - Adaptive concurrency (speed-tested on first file)
+ * - Adaptive concurrency (speed-tested on first image file)
  * - TUS resumable uploads
  * - Per-item retry with exponential backoff
  * - Batch database inserts
  * - Per-item cancel/abort
  * - Pause/resume entire queue
+ * - Video pre-processing: client-side thumbnail generation + pre-upload before TUS
  */
 import { startTusUpload } from "./tus-upload";
+import { generateVideoThumbnail, getVideoDuration } from "./video-utils";
 import type { QueueItem, ConnectionQuality } from "@/types";
 import {
   STORAGE_BUCKET,
@@ -21,9 +23,11 @@ import {
   CONCURRENCY_SLOW,
   SPEED_TEST_FAST_THRESHOLD,
   SPEED_TEST_SLOW_THRESHOLD,
-  MAX_FILE_SIZE,
+  MAX_IMAGE_SIZE,
+  MAX_VIDEO_SIZE,
 } from "@/lib/constants";
 import type { Upload as TusUploadInstance } from "tus-js-client";
+import { createClient } from "@/lib/supabase/client";
 
 // ─── Callback types ───
 
@@ -45,6 +49,9 @@ interface PendingDbRecord {
   file_size: number | null;
   width: number | null;
   height: number | null;
+  media_type: 'image' | 'video';
+  duration: number | null;
+  video_thumbnail_path: string | null;
 }
 
 // ─── Upload Queue Manager ───
@@ -78,27 +85,44 @@ export class UploadQueueManager {
 
   /** Add files to the queue */
   addFiles(files: File[]): void {
-    const newItems: QueueItem[] = files
-      .filter((f) => f.size <= MAX_FILE_SIZE)
-      .map((file) => {
-        const sanitizedFilename = file.name
-          .replace(/[^\w\s.-]/g, "")
-          .replace(/\s+/g, "-")
-          .toLowerCase();
+    const newItems: QueueItem[] = [];
 
-        return {
-          id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-          file,
-          name: sanitizedFilename,
-          size: file.size,
-          status: "queued" as const,
-          progress: 0,
-          retryCount: 0,
-          previewUrl: file.type.startsWith("image/")
-            ? URL.createObjectURL(file)
-            : undefined,
-        };
-      });
+    for (const file of files) {
+      const isVideo = file.type.startsWith("video/") || /\.(mp4|mov|webm)$/i.test(file.name);
+      const sizeLimit = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+
+      if (file.size > sizeLimit) {
+        alert(`${file.name} is too large. Max size is ${sizeLimit / (1024 * 1024)}MB.`);
+        continue;
+      }
+
+      const sanitizedFilename = file.name
+        .replace(/[^\w\s.-]/g, "")
+        .replace(/\s+/g, "-")
+        .toLowerCase();
+
+      const item: QueueItem = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        file,
+        name: sanitizedFilename,
+        size: file.size,
+        status: "queued" as const,
+        progress: 0,
+        retryCount: 0,
+        media_type: isVideo ? "video" : "image",
+        previewUrl: isVideo
+          ? undefined // video thumbnail preview set asynchronously below
+          : URL.createObjectURL(file),
+      };
+
+      newItems.push(item);
+
+      // For videos: kick off thumbnail generation + duration extraction in the background.
+      // Results are stored on the item before processNext() picks it up.
+      if (isVideo) {
+        this.prepareVideoMetadata(item);
+      }
+    }
 
     this.queue = [...this.queue, ...newItems];
     this.notifyUpdate();
@@ -109,15 +133,31 @@ export class UploadQueueManager {
     this.isPaused = false;
     this.registerBeforeUnload();
 
-    if (!this.speedTested && this.queue.some((i) => i.status === "queued")) {
-      // Upload first file solo as speed test
-      this.speedTested = true;
-      this.speedTestStartTime = performance.now();
-      this.connectionQuality = "testing";
-      this.callbacks.onConnectionQuality("testing");
-      this.processNext();
+    const hasQueued = this.queue.some((i) => i.status === "queued");
+    if (!hasQueued) return;
+
+    if (!this.speedTested) {
+      // Use the first *image* for the speed test (videos are much larger and would skew it).
+      // If the queue only has videos, skip the speed test entirely.
+      const firstImage = this.queue.find(
+        (i) => i.status === "queued" && i.media_type !== "video"
+      );
+
+      if (firstImage) {
+        this.speedTested = true;
+        this.speedTestStartTime = performance.now();
+        this.connectionQuality = "testing";
+        this.callbacks.onConnectionQuality("testing");
+        this.processNext();
+      } else {
+        // Only videos in the queue — skip speed test, use moderate concurrency
+        this.speedTested = true;
+        this.concurrency = CONCURRENCY_MODERATE;
+        this.connectionQuality = "moderate";
+        this.callbacks.onConnectionQuality("moderate");
+        this.fillSlots();
+      }
     } else {
-      // Fill up to concurrency limit
       this.fillSlots();
     }
   }
@@ -125,7 +165,6 @@ export class UploadQueueManager {
   /** Pause all active uploads */
   pause(): void {
     this.isPaused = true;
-    // Abort active TUS uploads (they can be resumed later)
     for (const [itemId, tusUpload] of this.tusInstances) {
       try {
         tusUpload.abort();
@@ -153,7 +192,6 @@ export class UploadQueueManager {
     if (!item) return;
 
     if (item.status === "uploading") {
-      // Abort active TUS upload
       const tusUpload = this.tusInstances.get(itemId);
       if (tusUpload) {
         try { tusUpload.abort(); } catch { /* ignore */ }
@@ -162,7 +200,7 @@ export class UploadQueueManager {
       this.activeCount--;
       item.status = "cancelled";
       this.notifyUpdate();
-      this.fillSlots(); // free slot → pick up next
+      this.fillSlots();
     } else if (item.status === "queued" || item.status === "failed" || item.status === "retrying") {
       item.status = "cancelled";
       this.notifyUpdate();
@@ -237,7 +275,6 @@ export class UploadQueueManager {
   destroy(): void {
     this.pause();
     this.unregisterBeforeUnload();
-    // Revoke preview URLs
     for (const item of this.queue) {
       if (item.previewUrl) {
         URL.revokeObjectURL(item.previewUrl);
@@ -269,25 +306,71 @@ export class UploadQueueManager {
     const storagePath = `${this.albumId}/${Date.now()}-${next.name}`;
     next.storagePath = storagePath;
 
-    // Extract dimensions before upload (non-blocking)
-    this.extractDimensions(next);
+    // For images: extract dimensions (non-blocking, best-effort)
+    if (next.media_type !== "video") {
+      this.extractDimensions(next);
+    }
+
+    // For videos: upload the pre-generated thumbnail first, then start TUS
+    if (next.media_type === "video") {
+      this.uploadVideoAndThumbnail(next, storagePath);
+    } else {
+      this.startTusForItem(next, storagePath);
+    }
+  }
+
+  /**
+   * For video items:
+   *  1. Upload the thumbnail blob (small webp, standard upload — not TUS)
+   *  2. Then kick off TUS for the video file itself
+   */
+  private async uploadVideoAndThumbnail(item: QueueItem, storagePath: string): Promise<void> {
+    // Upload thumbnail if we have one
+    if (item.videoThumbnailBlob) {
+      try {
+        const thumbPath = `${this.albumId}/thumb-video-${Date.now()}-${item.name}.webp`;
+        const supabase = createClient();
+        const { error } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .upload(thumbPath, item.videoThumbnailBlob, {
+            contentType: "image/webp",
+            upsert: false,
+          });
+
+        if (!error) {
+          item.videoThumbnailStoragePath = thumbPath;
+        } else {
+          console.warn("Video thumbnail upload failed (non-fatal):", error.message);
+        }
+      } catch (err) {
+        console.warn("Video thumbnail upload error (non-fatal):", err);
+      }
+    }
+
+    // Now start the actual TUS upload for the video file
+    if (item.status !== "uploading") return; // cancelled while thumbnail was uploading
+    this.startTusForItem(item, storagePath);
+  }
+
+  private startTusForItem(item: QueueItem, storagePath: string): void {
+    const isSpeedTest = this.speedTestStartTime > 0 && item.media_type !== "video";
 
     const tusUpload = startTusUpload({
-      file: next.file,
+      file: item.file,
       storagePath,
       accessToken: this.accessToken,
       onProgress: (percentage) => {
-        next.progress = percentage;
+        item.progress = percentage;
         this.notifyUpdate();
       },
       onSuccess: () => {
-        this.tusInstances.delete(next.id);
-        next.status = "complete";
-        next.progress = 100;
+        this.tusInstances.delete(item.id);
+        item.status = "complete";
+        item.progress = 100;
         this.activeCount--;
 
-        // Handle speed test completion
-        if (this.speedTestStartTime > 0) {
+        // Handle speed test completion (images only)
+        if (isSpeedTest && this.speedTestStartTime > 0) {
           const elapsed = performance.now() - this.speedTestStartTime;
           this.speedTestStartTime = 0;
           this.adaptConcurrency(elapsed);
@@ -297,13 +380,15 @@ export class UploadQueueManager {
         this.pendingDbRecords.push({
           album_id: this.albumId,
           storage_path: storagePath,
-          filename: next.name,
-          file_size: next.size,
-          width: next.width ?? null,
-          height: next.height ?? null,
+          filename: item.name,
+          file_size: item.size,
+          width: item.width ?? null,
+          height: item.height ?? null,
+          media_type: item.media_type ?? "image",
+          duration: item.duration ?? null,
+          video_thumbnail_path: item.videoThumbnailStoragePath ?? null,
         });
 
-        // Flush batch if threshold reached
         if (this.pendingDbRecords.length >= BATCH_INSERT_SIZE) {
           this.flushBatch();
         }
@@ -313,32 +398,32 @@ export class UploadQueueManager {
         this.fillSlots();
       },
       onError: (error) => {
-        this.tusInstances.delete(next.id);
+        this.tusInstances.delete(item.id);
         this.activeCount--;
 
         // Handle speed test failure — use slow defaults
-        if (this.speedTestStartTime > 0) {
+        if (isSpeedTest && this.speedTestStartTime > 0) {
           this.speedTestStartTime = 0;
           this.adaptConcurrency(999999);
         }
 
-        if (next.retryCount < MAX_RETRY_COUNT) {
-          next.status = "retrying";
-          next.retryCount++;
-          const delay = RETRY_DELAYS[next.retryCount - 1] || 5000;
+        if (item.retryCount < MAX_RETRY_COUNT) {
+          item.status = "retrying";
+          item.retryCount++;
+          const delay = RETRY_DELAYS[item.retryCount - 1] || 5000;
           this.notifyUpdate();
 
           setTimeout(() => {
-            if (next.status === "retrying") {
-              next.status = "queued";
-              next.progress = 0;
+            if (item.status === "retrying") {
+              item.status = "queued";
+              item.progress = 0;
               this.notifyUpdate();
               if (!this.isPaused) this.fillSlots();
             }
           }, delay);
         } else {
-          next.status = "failed";
-          next.error = error.message || "Upload failed after retries";
+          item.status = "failed";
+          item.error = error.message || "Upload failed after retries";
           this.notifyUpdate();
           this.checkCompletion();
           this.fillSlots();
@@ -346,8 +431,31 @@ export class UploadQueueManager {
       },
     });
 
-    this.tusInstances.set(next.id, tusUpload);
+    this.tusInstances.set(item.id, tusUpload);
     this.notifyUpdate();
+  }
+
+  /**
+   * Pre-generate thumbnail and extract duration for a video item.
+   * Runs in the background while the item sits in the queue.
+   * Updates previewUrl so the queue UI can show a thumbnail preview.
+   */
+  private async prepareVideoMetadata(item: QueueItem): Promise<void> {
+    try {
+      const [thumbnailBlob, duration] = await Promise.all([
+        generateVideoThumbnail(item.file),
+        getVideoDuration(item.file),
+      ]);
+
+      item.videoThumbnailBlob = thumbnailBlob;
+      item.duration = duration;
+      // Use the blob as the queue-list preview thumbnail
+      item.previewUrl = URL.createObjectURL(thumbnailBlob);
+      this.notifyUpdate();
+    } catch (err) {
+      // Non-fatal: video will upload without a thumbnail
+      console.warn("Video metadata preparation failed:", err);
+    }
   }
 
   private adaptConcurrency(elapsedMs: number): void {
@@ -363,8 +471,6 @@ export class UploadQueueManager {
     }
 
     this.callbacks.onConnectionQuality(this.connectionQuality);
-
-    // Fill remaining slots now that concurrency is determined
     this.fillSlots();
   }
 
@@ -395,8 +501,6 @@ export class UploadQueueManager {
 
       if (!res.ok) {
         console.error("Batch insert failed:", await res.text());
-        // Records are already in storage; they'll appear next time the page loads
-        // if the photographer navigates to the album management view
       }
     } catch (err) {
       console.error("Batch insert network error:", err);
@@ -405,7 +509,6 @@ export class UploadQueueManager {
 
   private checkCompletion(): void {
     if (!this.isActive()) {
-      // Flush any remaining DB records
       this.flushBatch();
       this.unregisterBeforeUnload();
       this.callbacks.onQueueComplete();

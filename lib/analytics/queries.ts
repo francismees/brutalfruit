@@ -109,3 +109,32 @@ export async function getTopImages(startDate: string, endDate: string, limit: nu
     downloadRatePercent: img.views > 0 ? ((img.downloads / img.views) * 100).toFixed(1) : '0.0'
   }));
 }
+
+export async function getMediaBreakdown(startDate: string, endDate: string) {
+  const supabase = await createClient();
+
+  const { data: events } = await supabase
+    .from('analytics_image_events')
+    .select(`
+      event_type,
+      images ( media_type )
+    `)
+    .in('event_type', ['view', 'download'])
+    .gte('created_at', startDate)
+    .lte('created_at', endDate);
+
+  const breakdown = {
+    image: { media_type: 'image', views: 0, downloads: 0 },
+    video: { media_type: 'video', views: 0, downloads: 0 }
+  };
+
+  if (!events) return Object.values(breakdown);
+
+  events.forEach((ev: any) => {
+    const type = ev.images?.media_type === 'video' ? 'video' : 'image';
+    if (ev.event_type === 'view') breakdown[type].views++;
+    if (ev.event_type === 'download') breakdown[type].downloads++;
+  });
+
+  return Object.values(breakdown);
+}

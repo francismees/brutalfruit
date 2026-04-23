@@ -29,6 +29,9 @@ CREATE TABLE IF NOT EXISTS images (
   height          INTEGER,
   uploaded_by     UUID DEFAULT auth.uid() REFERENCES auth.users(id),
   sort_order      INTEGER DEFAULT 0,
+  media_type      TEXT DEFAULT 'image' CHECK (media_type IN ('image', 'video')),
+  duration        INTEGER,
+  video_thumbnail_path TEXT,
   created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 

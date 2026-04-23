@@ -1,6 +1,7 @@
 import { TrafficOverview } from '@/components/admin/analytics/TrafficOverview';
 import { TopImagesList } from '@/components/admin/analytics/TopImagesList';
-import { getAnalyticsSummary, getTopImages } from '@/lib/analytics/queries';
+import { MediaBreakdown } from '@/components/admin/analytics/MediaBreakdown';
+import { getAnalyticsSummary, getTopImages, getMediaBreakdown } from '@/lib/analytics/queries';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 
 // Set this to a dynamic route since it depends on query params and live data
@@ -21,6 +22,7 @@ export default async function AnalyticsDashboard({
 
   // Fetch server side data
   const summary = await getAnalyticsSummary(startDateStr, endDateStr);
+  const mediaBreakdown = await getMediaBreakdown(startDateStr, endDateStr);
   const topImages = await getTopImages(startDateStr, endDateStr, 15);
 
   return (
@@ -46,6 +48,9 @@ export default async function AnalyticsDashboard({
         totalDownloads: summary.totalDownloads,
         downloadRatePerVisitor: summary.downloadRatePerVisitor
       }} />
+
+      {/* Media Type Breakdown */}
+      <MediaBreakdown data={mediaBreakdown} />
 
       {/* Top Images Table */}
       <div className="mt-6">

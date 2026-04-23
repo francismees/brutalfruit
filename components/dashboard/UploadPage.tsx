@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUpload } from "@/hooks/useUpload";
-import { ACCEPTED_EXTENSIONS } from "@/lib/constants";
+import { ACCEPTED_EXTENSIONS, ACCEPTED_TYPES } from "@/lib/constants";
 import { formatFileSize } from "@/lib/utils";
 import { getThumbnailUrl } from "@/lib/image-loader";
 import { PageHeader } from "@/components/dashboard/PageHeader";
@@ -271,20 +271,20 @@ export function UploadPage() {
           <p className="text-editorial text-bf-gray-400 mb-4">or click to browse your device</p>
           <div className="flex items-center justify-center gap-3">
             <span className="label-ui text-[0.65rem] px-3 py-1 border border-bf-gray-200 rounded-full text-bf-gray-400">
-              UP TO 50MB
+              IMAGES UP TO 50MB
             </span>
             <span className="label-ui text-[0.65rem] px-3 py-1 border border-bf-gray-200 rounded-full text-bf-gray-400">
-              RAW / JPG / TIFF
+              JPG / PNG / WEBP / MP4 / MOV
             </span>
             <span className="label-ui text-[0.65rem] px-3 py-1 border border-bf-gray-200 rounded-full text-bf-gray-400">
-              RESUMABLE
+              VIDEOS UP TO 500MB
             </span>
           </div>
           <input
             ref={fileInputRef}
             type="file"
             multiple
-            accept={ACCEPTED_EXTENSIONS}
+            accept="image/*,video/*"
             onChange={handleFileSelect}
             className="hidden"
           />
@@ -349,9 +349,23 @@ export function UploadPage() {
                   }`}
                 >
                   {item.previewUrl ? (
-                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-bf-cream shrink-0">
+                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-bf-cream shrink-0 relative">
                       {/* eslint-disable-next-line @next/next/no-img-element -- blob URL preview, not optimizable by next/image */}
                       <img src={item.previewUrl} alt="" className="w-full h-full object-cover" />
+                      {item.media_type === 'video' && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
+                            <path d="M8 5v14l11-7z"/>
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  ) : item.media_type === 'video' ? (
+                    <div className="w-10 h-10 rounded-lg bg-bf-cream shrink-0 flex items-center justify-center text-bf-gray-400">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <polygon points="23 7 16 12 23 17 23 7" />
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                      </svg>
                     </div>
                   ) : (
                     <div className="w-10 h-10 rounded-lg bg-bf-cream shrink-0" />
@@ -455,7 +469,7 @@ export function UploadPage() {
               {allDone && (
                 <>
                   <div className="flex-1 text-sm font-sans text-green-600 font-medium">
-                    ✓ {progress.completed} image{progress.completed !== 1 ? "s" : ""} uploaded
+                    ✓ {progress.completed} file{progress.completed !== 1 ? "s" : ""} uploaded
                     {progress.failed > 0 && <span className="text-red-500 ml-1">· {progress.failed} failed</span>}
                   </div>
                   <button

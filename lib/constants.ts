@@ -10,14 +10,29 @@ export const DEFAULT_PAGE_SIZE = 40;
 export const PAGE_SIZE_OPTIONS = [20, 40, 60, 80] as const;
 
 /* ─── Upload Constraints ─── */
-export const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-export const ACCEPTED_IMAGE_TYPES = [
+export const MAX_IMAGE_SIZE = 50 * 1024 * 1024;  // 50MB
+export const MAX_VIDEO_SIZE = 500 * 1024 * 1024; // 500MB
+/** Used by the upload queue size-check — set to the larger video limit so videos aren't rejected. */
+export const MAX_FILE_SIZE = MAX_VIDEO_SIZE;
+
+export const IMAGE_TYPES = [
   'image/jpeg',
   'image/png',
+  'image/webp',
+  'image/heic',
   'image/tiff',
   'image/x-adobe-dng',
 ] as const;
-export const ACCEPTED_EXTENSIONS = '.jpg,.jpeg,.png,.tiff,.tif,.dng,.arw,.cr2,.nef,.raw';
+export const VIDEO_TYPES = [
+  'video/mp4',
+  'video/quicktime',
+  'video/webm',
+] as const;
+export const ACCEPTED_TYPES = [...IMAGE_TYPES, ...VIDEO_TYPES] as const;
+
+/** @deprecated Use IMAGE_TYPES / VIDEO_TYPES / ACCEPTED_TYPES */
+export const ACCEPTED_IMAGE_TYPES = IMAGE_TYPES;
+export const ACCEPTED_EXTENSIONS = '.jpg,.jpeg,.png,.webp,.tiff,.tif,.dng,.arw,.cr2,.nef,.raw,.mp4,.mov,.webm,.MP4,.MOV,.WEBM';
 export const UPLOAD_URL_EXPIRY = 60; // seconds
 
 /* ─── Adaptive Upload Pipeline ─── */

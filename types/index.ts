@@ -25,6 +25,12 @@ export interface GalleryImage {
   uploaded_by: string | null;
   sort_order: number;
   created_at: string;
+  /** 'image' (default) or 'video'. Populated from the images.media_type column. */
+  media_type?: 'image' | 'video';
+  /** Video duration in whole seconds. NULL for images. */
+  duration?: number | null;
+  /** Storage path of the client-generated video poster thumbnail. NULL for images. */
+  video_thumbnail_path?: string | null;
 }
 
 export interface Photographer {
@@ -72,6 +78,14 @@ export interface QueueItem {
   storagePath?: string;   // set once upload begins
   width?: number | null;
   height?: number | null;
+  /** 'image' (default) or 'video', derived from file MIME type. */
+  media_type?: 'image' | 'video';
+  /** Video duration in whole seconds, extracted client-side before upload. */
+  duration?: number | null;
+  /** Object URL of the generated thumbnail blob (for the queue list preview). Revoked on destroy. */
+  videoThumbnailBlob?: Blob;
+  /** Storage path of the uploaded video thumbnail, populated after thumbnail upload completes. */
+  videoThumbnailStoragePath?: string;
 }
 
 export type ConnectionQuality = 'testing' | 'fast' | 'moderate' | 'slow';
