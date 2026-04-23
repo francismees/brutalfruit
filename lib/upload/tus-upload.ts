@@ -5,6 +5,14 @@
  * enabling automatic resume on connection drops.
  */
 import * as tus from "tus-js-client";
+
+function getFallbackMimeType(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  if (ext === 'mp4') return 'video/mp4';
+  if (ext === 'mov') return 'video/quicktime';
+  if (ext === 'webm') return 'video/webm';
+  return 'application/octet-stream';
+}
 import { TUS_CHUNK_SIZE, STORAGE_BUCKET } from "@/lib/constants";
 
 export interface TusUploadOptions {
@@ -42,7 +50,7 @@ export function startTusUpload({
     metadata: {
       bucketName: STORAGE_BUCKET,
       objectName: storagePath,
-      contentType: file.type,
+      contentType: file.type || getFallbackMimeType(file.name),
       cacheControl: "3600",
     },
     chunkSize: TUS_CHUNK_SIZE,

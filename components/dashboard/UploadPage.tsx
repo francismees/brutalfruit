@@ -184,6 +184,10 @@ export function UploadPage() {
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    if (!selectedAlbumId) {
+      alert("Please select an album first!");
+      return;
+    }
     if (e.dataTransfer.files.length > 0) {
       addFiles(e.dataTransfer.files);
     }
@@ -259,8 +263,16 @@ export function UploadPage() {
         <div
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-bf-gray-200 rounded-2xl p-12 text-center cursor-pointer hover:border-bf-rosegold-flat transition-colors mb-6"
+          onClick={() => {
+            if (!selectedAlbumId) {
+              alert("Please select an album first!");
+              return;
+            }
+            fileInputRef.current?.click();
+          }}
+          className={`border-2 border-dashed rounded-3xl p-10 flex flex-col items-center justify-center text-center cursor-pointer transition-colors bg-white hover:bg-bf-cream/50 ${
+            selectedAlbumId ? "border-bf-gray-200 hover:border-bf-black" : "border-red-300 bg-red-50/30"
+          }`}
         >
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-bf-cream flex items-center justify-center">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--bf-rosegold-flat)" strokeWidth="1.5">

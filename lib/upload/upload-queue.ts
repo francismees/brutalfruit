@@ -120,7 +120,7 @@ export class UploadQueueManager {
       // For videos: kick off thumbnail generation + duration extraction in the background.
       // Results are stored on the item before processNext() picks it up.
       if (isVideo) {
-        this.prepareVideoMetadata(item);
+        item.metadataPromise = this.prepareVideoMetadata(item);
       }
     }
 
@@ -325,6 +325,15 @@ export class UploadQueueManager {
    *  2. Then kick off TUS for the video file itself
    */
   private async uploadVideoAndThumbnail(item: QueueItem, storagePath: string): Promise<void> {
+    // Wait for metadata generation to finish if it's still running
+    if (item.metadataPromise) {
+      try {
+        await item.metadataPromise;
+      } catch (err) {
+        console.warn("Error waiting for metadata promise:", err);
+      }
+    }
+
     // Upload thumbnail if we have one
     if (item.videoThumbnailBlob) {
       try {

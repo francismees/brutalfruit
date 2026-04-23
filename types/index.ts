@@ -86,6 +86,7 @@ export interface QueueItem {
   videoThumbnailBlob?: Blob;
   /** Storage path of the uploaded video thumbnail, populated after thumbnail upload completes. */
   videoThumbnailStoragePath?: string;
+  metadataPromise?: Promise<void>;
 }
 
 export type ConnectionQuality = 'testing' | 'fast' | 'moderate' | 'slow';

@@ -31,7 +31,13 @@ export function generateVideoThumbnail(file: File): Promise<Blob> {
       video.currentTime = Math.min(1, video.duration * 0.25);
     };
 
+    const timeout = setTimeout(() => {
+      URL.revokeObjectURL(video.src);
+      reject(new Error('Video thumbnail generation timed out'));
+    }, 5000); // 5s timeout
+
     video.onseeked = () => {
+      clearTimeout(timeout);
       const canvas = document.createElement('canvas');
       const targetWidth = 400;
       canvas.width = targetWidth;
@@ -60,6 +66,7 @@ export function generateVideoThumbnail(file: File): Promise<Blob> {
     };
 
     video.onerror = () => {
+      clearTimeout(timeout);
       URL.revokeObjectURL(video.src);
       reject(new Error('Failed to load video for thumbnail generation'));
     };
@@ -79,13 +86,20 @@ export function getVideoDuration(file: File): Promise<number> {
     const video = document.createElement('video');
     video.preload = 'metadata';
 
+    const timeout = setTimeout(() => {
+      URL.revokeObjectURL(video.src);
+      resolve(0); // non-fatal fallback
+    }, 5000);
+
     video.onloadedmetadata = () => {
+      clearTimeout(timeout);
       const duration = Math.round(video.duration);
       URL.revokeObjectURL(video.src);
       resolve(duration);
     };
 
     video.onerror = () => {
+      clearTimeout(timeout);
       URL.revokeObjectURL(video.src);
       // Resolve with 0 rather than rejecting — duration is non-critical
       resolve(0);
