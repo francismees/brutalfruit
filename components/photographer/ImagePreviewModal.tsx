@@ -42,15 +42,25 @@ export function ImagePreviewModal({
       </button>
 
       <div className="relative w-full h-full flex flex-col md:flex-row gap-8 max-w-7xl mx-auto">
-        {/* Image Display */}
-        <div className="flex-1 relative bg-bf-black rounded-3xl overflow-hidden group">
-          <Image
-            src={image.storage_path.startsWith('http') ? image.storage_path : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/event-photos/${image.storage_path}`}
-            alt={image.filename}
-            fill
-            className="object-contain"
-            priority
-          />
+        {/* Media Display */}
+        <div className="flex-1 relative bg-bf-black rounded-3xl overflow-hidden group flex items-center justify-center">
+          {image.media_type === "video" ? (
+            <video
+              src={image.storage_path.startsWith('http') ? image.storage_path : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/event-photos/${image.storage_path}`}
+              controls
+              autoPlay
+              playsInline
+              className="max-w-full max-h-[80vh] object-contain"
+            />
+          ) : (
+            <Image
+              src={image.storage_path.startsWith('http') ? image.storage_path : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/event-photos/${image.storage_path}`}
+              alt={image.filename}
+              fill
+              className="object-contain"
+              priority
+            />
+          )}
         </div>
 
         {/* Info Sidebar */}
