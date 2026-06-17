@@ -62,6 +62,17 @@ const ADMIN_NAV: NavItem[] = [
       </svg>
     ),
   },
+  {
+    href: "/dashboard/milan-brunch",
+    label: "Milan Brunch",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <rect x="3" y="5" width="18" height="16" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M16 3v4M8 3v4M3 11h18" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+  },
 ];
 
 const PHOTOGRAPHER_NAV: NavItem[] = [
@@ -101,6 +112,7 @@ export function Sidebar({ role }: SidebarProps) {
   const isActive = (href: string) => {
     if (href === "/admin") return pathname === "/admin";
     if (href === "/photographer" && role === "photographer") return pathname === "/photographer";
+    if (href === "/dashboard/milan-brunch") return pathname.startsWith("/dashboard/milan-brunch");
     return pathname.startsWith(href);
   };
 
