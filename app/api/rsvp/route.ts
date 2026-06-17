@@ -82,7 +82,10 @@ export async function POST(request: NextRequest) {
       qr_token: data.qr_token,
     });
   } catch (err) {
-    console.error("Confirmation email failed:", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    console.error(`[rsvp] Confirmation email failed for ${data.email}: ${msg}`);
+    if (stack) console.error(`[rsvp] Stack:`, stack);
   }
 
   return NextResponse.json({ qr_token: data.qr_token });
