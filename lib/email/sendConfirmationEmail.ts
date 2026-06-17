@@ -80,7 +80,7 @@ function buildHtml({ name, artworkUrl, wordmarkUrl, confirmUrl }: HtmlParams): s
     <title>${escapeHtml(EMAIL_SUBJECT_FOR_PREVIEW)}</title>
   </head>
   <body style="margin:0;padding:0;background:#FDF8F4;font-family:${SANS};color:#262627;-webkit-font-smoothing:antialiased;">
-    <span style="display:none;font-size:0;line-height:0;color:#FDF8F4;opacity:0;">You're in for Brutal Fruit Milan Brunch — see you at Karambezi Café on Saturday 20 June.</span>
+    <span style="display:none;font-size:0;line-height:0;color:#FDF8F4;opacity:0;">You're in for Brutal Fruit Milan Brunch, see you at Wildflour Café on Saturday 20 June.</span>
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#FDF8F4;">
       <tr>
         <td align="center" style="padding:40px 16px 8px;">

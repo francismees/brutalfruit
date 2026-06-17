@@ -4,8 +4,8 @@
  */
 
 export const EVENT_NAME = "Milan Brunch";
-export const EVENT_VENUE = "Karambezi Café, Masaki";
-export const EVENT_FULL_ADDRESS = "Sea Cliff Hotel, Toure Drive, Masaki, Dar es Salaam";
+export const EVENT_VENUE = "Wildflour Café";
+export const EVENT_FULL_ADDRESS = "Masaki, Dar es Salaam";
 export const EVENT_DATE_ISO = "2026-06-20T11:00:00+03:00";
 export const EVENT_DATE_END_ISO = "2026-06-20T14:00:00+03:00";
 export const EVENT_DISPLAY = "Saturday, 20 June 2026 · 11am";
