@@ -9,8 +9,31 @@ import {
 import { RsvpForm } from "./RsvpForm";
 
 export const metadata: Metadata = {
-  title: "Milan Brunch — RSVP",
-  description: `${PRIZE_HEADLINE}. Brunch with Brutal Fruit — your seat, your chance.`,
+  // `absolute` skips the root layout's "%s | Brutal Fruit Tanzania" template
+  // so the tab + link preview read exactly as the campaign headline.
+  title: { absolute: "Win a Trip to Milan" },
+  description: "Brunch with Brutal Fruit — your seat, your chance.",
+  openGraph: {
+    title: "Win a Trip to Milan",
+    description: "Brunch with Brutal Fruit — your seat, your chance.",
+    url: "https://brutalfruit.co.tz/milan-brunch",
+    siteName: "Brutal Fruit Tanzania",
+    type: "website",
+    images: [
+      {
+        url: "https://brutalfruit.co.tz/milan-brunch/artwork.jpg",
+        width: 1200,
+        height: 1200,
+        alt: "Brunch with Brutal Fruit",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Win a Trip to Milan",
+    description: "Brunch with Brutal Fruit — your seat, your chance.",
+    images: ["https://brutalfruit.co.tz/milan-brunch/artwork.jpg"],
+  },
 };
 
 export const dynamic = "force-dynamic";
