@@ -1,11 +1,11 @@
 import { Resend } from "resend";
-import QRCode from "qrcode";
 import {
   EMAIL_SUBJECT,
   EVENT_DISPLAY,
   EVENT_FULL_ADDRESS,
   EVENT_VENUE,
   confirmationUrl,
+  siteUrl,
 } from "@/lib/milan-brunch/config";
 
 interface SendConfirmationEmailParams {
@@ -25,8 +25,8 @@ function getResend(): Resend {
 }
 
 /**
- * Send the post-RSVP confirmation email. Generates the QR PNG inline so the
- * door check-in works offline straight from the inbox.
+ * Send the post-RSVP confirmation email. Door check-in is handled manually,
+ * so the email shows the campaign artwork rather than a QR.
  */
 export async function sendConfirmationEmail({
   to,
@@ -37,14 +37,9 @@ export async function sendConfirmationEmail({
   const from = process.env.RESEND_FROM_EMAIL;
   if (!from) throw new Error("RESEND_FROM_EMAIL is not configured");
 
-  const qrDataUrl = await QRCode.toDataURL(qr_token, {
-    margin: 1,
-    width: 480,
-    color: { dark: "#262627", light: "#FFFFFF" },
-  });
-
+  const artworkUrl = siteUrl("/milan-brunch/artwork.jpg");
   const confirmUrl = confirmationUrl(qr_token);
-  const html = buildHtml({ name, qrDataUrl, confirmUrl });
+  const html = buildHtml({ name, artworkUrl, confirmUrl });
   const text = buildText({ name, confirmUrl });
 
   const { data, error } = await resend.emails.send({
@@ -63,13 +58,13 @@ export async function sendConfirmationEmail({
 
 interface HtmlParams {
   name: string;
-  qrDataUrl: string;
+  artworkUrl: string;
   confirmUrl: string;
 }
 
-function buildHtml({ name, qrDataUrl, confirmUrl }: HtmlParams): string {
+function buildHtml({ name, artworkUrl, confirmUrl }: HtmlParams): string {
   const firstName = name.split(/\s+/)[0] || name;
-  // Dark Brutal Fruit palette — sans-serif body — embedded QR PNG via data URL.
+  // Dark Brutal Fruit palette — sans-serif body — campaign artwork (no QR).
   return `<!doctype html>
 <html lang="en">
   <body style="margin:0;padding:0;background:#1a0d15;font-family:'Helvetica Neue',Arial,sans-serif;color:#FAF7F2;">
@@ -82,13 +77,13 @@ function buildHtml({ name, qrDataUrl, confirmUrl }: HtmlParams): string {
                 <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:#FF9EBC;">Brutal Fruit · Milan Brunch</p>
                 <h1 style="margin:8px 0 0;font-size:32px;line-height:1.15;font-weight:400;color:#FAF7F2;">You're in, bestie.</h1>
                 <p style="margin:16px 0 0;font-size:16px;line-height:1.55;color:#D4D4D5;">
-                  ${escapeHtml(firstName)}, your seat at ${escapeHtml(EVENT_VENUE)} is locked in. Show this QR at the door — that's all we need.
+                  ${escapeHtml(firstName)}, your seat at ${escapeHtml(EVENT_VENUE)} is locked in. We can't wait to see you.
                 </p>
               </td>
             </tr>
             <tr>
               <td align="center" style="padding:16px 32px 8px;">
-                <img src="${qrDataUrl}" alt="Your check-in QR code" width="240" height="240" style="display:block;background:#FFFFFF;border-radius:16px;padding:16px;" />
+                <img src="${artworkUrl}" alt="Brunch with Brutal Fruit" width="480" style="display:block;width:100%;max-width:480px;height:auto;border-radius:16px;" />
               </td>
             </tr>
             <tr>
@@ -114,7 +109,7 @@ function buildHtml({ name, qrDataUrl, confirmUrl }: HtmlParams): string {
             </tr>
             <tr>
               <td align="center" style="padding:8px 32px 40px;">
-                <a href="${confirmUrl}" style="display:inline-block;background:linear-gradient(135deg,#FF9EBC 0%,#F2688E 100%);color:#FFFFFF;text-decoration:none;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;padding:14px 28px;border-radius:999px;font-weight:500;">View my QR online</a>
+                <a href="${confirmUrl}" style="display:inline-block;background:linear-gradient(135deg,#FF9EBC 0%,#F2688E 100%);color:#FFFFFF;text-decoration:none;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;padding:14px 28px;border-radius:999px;font-weight:500;">Open my confirmation</a>
                 <p style="margin:24px 0 0;font-size:12px;color:#9B9B9C;line-height:1.5;">
                   Lost this email? Re-open it from <a href="${confirmUrl}" style="color:#FF9EBC;text-decoration:underline;">${escapeHtml(confirmUrl)}</a>.
                 </p>
@@ -138,7 +133,7 @@ function buildText({ name, confirmUrl }: { name: string; confirmUrl: string }): 
     `       ${EVENT_FULL_ADDRESS}`,
     `When:  ${EVENT_DISPLAY}`,
     "",
-    "Show the QR at the door. If this email is hard to read, view your QR online:",
+    "Open your confirmation:",
     confirmUrl,
     "",
     "Not For Persons Under the Age of 18. Please Enjoy Brutal Fruit Responsibly.",
