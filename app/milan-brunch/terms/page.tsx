@@ -132,14 +132,6 @@ export default function MilanBrunchTermsPage() {
               winners, and all decisions shall be final and binding.
             </p>
           </TermsSection>
-
-          <TermsSection number="3" title="Acceptance">
-            <p className="text-editorial text-bf-text-secondary text-base leading-relaxed">
-              By entering the Competition, participants confirm that they have
-              read, understood, and accepted these Terms &amp; Conditions and
-              agree to comply with all Competition requirements.
-            </p>
-          </TermsSection>
         </article>
       </main>
 
